@@ -1,3 +1,10 @@
+"""
+This code computes some descriptive statistics, based on the values 
+of the V channel (brightness values) of the images in our dataset.
+With the goal of understanding the brightness distribution of 
+these images according to the view (frontal or lateral).
+"""
+
 # NECESSARY LIBRARIES
 import matplotlib.pyplot as plt
 import cv2
@@ -93,5 +100,3 @@ if __name__ == "__main__":
     # Compute and show histograms for frontal images
     compute_histogram(frontal_stats['means'], frontal_stats['stds'], "Frontal")
     compute_histogram(lateral_stats['means'], lateral_stats['stds'], "Lateral")
-
-    # DESCRIPTIVE STATISTIC - ANGLE OF THE PICTURE:
