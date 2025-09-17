@@ -56,6 +56,7 @@ def detectPlates(image):
             plt.figure()
             plt.imshow(gradX,cmap='gray')
             plt.title("Gradient X")
+            plt.show()
         
         # gaussian blur with a 5 x 5 kernel to smooth detail and noise
         gradX = cv2.GaussianBlur(gradX, (7, 7), 0)
@@ -64,6 +65,7 @@ def detectPlates(image):
             plt.figure()
             plt.imshow(gradX,cmap='gray')
             plt.title("Gausian Gx")
+            plt.show()
             
         
         # el valor de corte se fija como el 40% del màximo
@@ -73,6 +75,7 @@ def detectPlates(image):
             plt.figure()
             plt.imshow(ThrGradX,cmap='gray')
             plt.title("Threshold Gx")
+            plt.show()
         
 
         # some morphological operation to join parts first opening to remove small spots second to grow the area of license plate
@@ -82,6 +85,7 @@ def detectPlates(image):
             plt.figure()
             plt.imshow(thresh,cmap='gray')
             plt.title("Possible license plates")
+            plt.show()
                   
         # find contours in the thresholded image
         (cnts,_) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -121,4 +125,7 @@ def detectPlates(image):
         return regions
 
 
+if __name__ == "__main__":
+    image = cv2.imread("dataset/Frontal/0216KZP.jpg")
+    detectPlates(image)
     
