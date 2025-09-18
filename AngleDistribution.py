@@ -27,8 +27,8 @@ def norm_plate_angle(rect):
     Positive = counter-clockwise. Output in [-90, 90].
     """
     (_, _), (w, h), a = rect  # OpenCV gives a in (-90, 0]
-    if w < h:
-        angle = a + 90.0
+    if w < h: #taller than wider
+        angle = a + 90.0 
     else:
         angle = a
     if angle > 90.0:
@@ -59,6 +59,7 @@ def detectPlates(image_bgr):
     regions = []
 
     # Grayscale + blackhat to emphasize dark narrow regions
+    #Blackhat emphasizes dark text on ligh background
     gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
     blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, squareKernel, iterations=3)
 
@@ -106,7 +107,7 @@ def detectPlates(image_bgr):
 
         if NotouchBorder and keepAspectRatio and keepWidth and keepHeight and keepArea:
             rect = cv2.minAreaRect(c)     # ((cx, cy), (W, H), angle)
-            box = cv2.boxPoints(rect)     # 4 points
+            box = cv2.boxPoints(rect)     # 4 corner points
             angle_deg = norm_plate_angle(rect)
             regions.append((box, angle_deg))
         i = i + 1
@@ -117,7 +118,6 @@ def detectPlates(image_bgr):
 def image_angle(img_path):
     """
     Returns one angle (degrees) for a single image, or None if not found or unreadable.
-    Policy: take the FIRST accepted plate candidate's angle.
     """
     img = cv2.imread(img_path)
     if img is None:
@@ -151,32 +151,28 @@ def compute_overall_angle_stats(path):
         stats['count'] = 0
         return stats
 
-    listing = os.listdir(path)
-    idx = 0
-    while idx < len(listing):
-        fname = listing[idx]
-        fpath = os.path.join(path, fname)
-        if os.path.isfile(fpath):
-            name, ext = os.path.splitext(fname)
-            ext = ext.lower()
-            if ext == ".jpg" or ext == ".jpeg" or ext == ".png" or ext == ".bmp" or ext == ".tif" or ext == ".tiff":
-                ang = image_angle(fpath)
-                if ang is not None:
-                    angles.append(ang)
-                    files.append(fname)
-        idx = idx + 1
+    listing = os.listdir(path) #list of all file names
+    for fname in listing:
+        folder_path = os.path.join(path, fname) #folder + name
+        ang = image_angle(folder_path)
+        if ang is not None:
+            angles.append(ang)
+            #files.append(fname) if we want to use it after 
+
 
     stats = {}
-    stats['angles'] = angles
+    stats['angles'] = angles #save the list of angles collected before
+    """
+    # Case of no angles, needed?¿
     if len(angles) == 0:
         stats['overall_mean'] = np.nan
         stats['overall_std'] = np.nan
         stats['min'] = np.nan
         stats['max'] = np.nan
         stats['count'] = 0
-        return stats
-
-    # Convert to array for convenience
+        return stats 
+    """
+    # Convert to array bc we want numerical work easier
     arr = np.array(angles, dtype=float)
 
     # Mean
@@ -187,8 +183,8 @@ def compute_overall_angle_stats(path):
         i = i + 1
     overall_mean = s / float(len(arr))
 
-    # Std (population, ddof=0)
-    # std = sqrt( mean( (x - mean)^2 ) )
+    # Std 
+    # Formula: std = sqrt( mean( (x - mean)^2 ) )
     s2 = 0.0
     j = 0
     while j < len(arr):
@@ -240,11 +236,11 @@ if __name__ == "__main__":
 
     # DESCRIPTIVE STATISTICS — ANGLES (DEGREES):
 
-    frontal_dir = "dataset/Frontal"
-    lateral_dir = "dataset/Lateral"
+    frontal = "dataset/Frontal"
+    lateral = "dataset/Lateral"
 
     # Compute descriptive statistics for angles in frontal images
-    frontal_stats = compute_overall_angle_stats(frontal_dir)
+    frontal_stats = compute_overall_angle_stats(frontal)
     print("Frontal Images - Angle Mean:", round(frontal_stats['overall_mean'], 4) if not np.isnan(frontal_stats['overall_mean']) else frontal_stats['overall_mean'])
     print("Frontal Images - Angle Std Dev:", round(frontal_stats['overall_std'], 4) if not np.isnan(frontal_stats['overall_std']) else frontal_stats['overall_std'])
     print("Frontal Images - Angle Min:", round(frontal_stats['min'], 4) if not np.isnan(frontal_stats['min']) else frontal_stats['min'])
@@ -253,7 +249,7 @@ if __name__ == "__main__":
     print("")
 
     # Compute descriptive statistics for angles in lateral images
-    lateral_stats = compute_overall_angle_stats(lateral_dir)
+    lateral_stats = compute_overall_angle_stats(lateral)
     print("Lateral Images - Angle Mean:", round(lateral_stats['overall_mean'], 4) if not np.isnan(lateral_stats['overall_mean']) else lateral_stats['overall_mean'])
     print("Lateral Images - Angle Std Dev:", round(lateral_stats['overall_std'], 4) if not np.isnan(lateral_stats['overall_std']) else lateral_stats['overall_std'])
     print("Lateral Images - Angle Min:", round(lateral_stats['min'], 4) if not np.isnan(lateral_stats['min']) else lateral_stats['min'])
@@ -276,6 +272,7 @@ if __name__ == "__main__":
 
     # Compute overall stats for ALL
     all_stats = {}
+    all_stats['angles'] = all_angles 
     if len(all_angles) > 0:
         # mean
         s_all = 0.0
@@ -318,12 +315,13 @@ if __name__ == "__main__":
         all_stats['max'] = np.nan
         all_stats['count'] = 0
 
-    print("ALL Images - Angle Mean:", round(all_stats['overall_mean'], 4) if not np.isnan(all_stats['overall_mean']) else all_stats['overall_mean'])
-    print("ALL Images - Angle Std Dev:", round(all_stats['overall_std'], 4) if not np.isnan(all_stats['overall_std']) else all_stats['overall_std'])
-    print("ALL Images - Angle Min:", round(all_stats['min'], 4) if not np.isnan(all_stats['min']) else all_stats['min'])
-    print("ALL Images - Angle Max:", round(all_stats['max'], 4) if not np.isnan(all_stats['max']) else all_stats['max'])
-    print("ALL Images - Count:", all_stats['count'])
+    print("All Images - Angle Mean:", round(all_stats['overall_mean'], 4) if not np.isnan(all_stats['overall_mean']) else all_stats['overall_mean'])
+    print("All Images - Angle Std Dev:", round(all_stats['overall_std'], 4) if not np.isnan(all_stats['overall_std']) else all_stats['overall_std'])
+    print("All Images - Angle Min:", round(all_stats['min'], 4) if not np.isnan(all_stats['min']) else all_stats['min'])
+    print("All Images - Angle Max:", round(all_stats['max'], 4) if not np.isnan(all_stats['max']) else all_stats['max'])
+    print("All Images - Count:", all_stats['count'])
 
     # Histograms
     compute_histogram_angles(frontal_stats['angles'], "Frontal")
     compute_histogram_angles(lateral_stats['angles'], "Lateral")
+    compute_histogram_angles(all_stats['angles'], "All images")
