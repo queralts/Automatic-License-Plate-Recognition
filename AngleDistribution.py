@@ -1,4 +1,3 @@
-
 """
 This code computes descriptive statistics based on the ROTATION ANGLE (in degrees)
 of the detected license plates in our dataset. The goal is to understand the angle
@@ -142,14 +141,8 @@ def compute_overall_angle_stats(path):
     files = []
     if not os.path.isdir(path):
         print("Directory not found:", path)
-        stats = {}
-        stats['angles'] = angles
-        stats['overall_mean'] = np.nan
-        stats['overall_std'] = np.nan
-        stats['min'] = np.nan
-        stats['max'] = np.nan
-        stats['count'] = 0
-        return stats
+        print("Couldn't compute any statistics.")
+        return None
 
     listing = os.listdir(path) #list of all file names
     for fname in listing:
@@ -162,16 +155,10 @@ def compute_overall_angle_stats(path):
 
     stats = {}
     stats['angles'] = angles #save the list of angles collected before
-    """
-    # Case of no angles, needed?¿
+
     if len(angles) == 0:
-        stats['overall_mean'] = np.nan
-        stats['overall_std'] = np.nan
-        stats['min'] = np.nan
-        stats['max'] = np.nan
-        stats['count'] = 0
-        return stats 
-    """
+        return None
+
     # Convert to array bc we want numerical work easier
     arr = np.array(angles, dtype=float)
 
@@ -230,32 +217,7 @@ def compute_histogram_angles(angles, frontal_or_lateral):
     plt.show()
 
 
-# --------- MAIN ---------
-
-if __name__ == "__main__":
-
-    # DESCRIPTIVE STATISTICS — ANGLES (DEGREES):
-
-    frontal = "dataset/Frontal"
-    lateral = "dataset/Lateral"
-
-    # Compute descriptive statistics for angles in frontal images
-    frontal_stats = compute_overall_angle_stats(frontal)
-    print("Frontal Images - Angle Mean:", round(frontal_stats['overall_mean'], 4) if not np.isnan(frontal_stats['overall_mean']) else frontal_stats['overall_mean'])
-    print("Frontal Images - Angle Std Dev:", round(frontal_stats['overall_std'], 4) if not np.isnan(frontal_stats['overall_std']) else frontal_stats['overall_std'])
-    print("Frontal Images - Angle Min:", round(frontal_stats['min'], 4) if not np.isnan(frontal_stats['min']) else frontal_stats['min'])
-    print("Frontal Images - Angle Max:", round(frontal_stats['max'], 4) if not np.isnan(frontal_stats['max']) else frontal_stats['max'])
-    print("Frontal Images - Count:", frontal_stats['count'])
-    print("")
-
-    # Compute descriptive statistics for angles in lateral images
-    lateral_stats = compute_overall_angle_stats(lateral)
-    print("Lateral Images - Angle Mean:", round(lateral_stats['overall_mean'], 4) if not np.isnan(lateral_stats['overall_mean']) else lateral_stats['overall_mean'])
-    print("Lateral Images - Angle Std Dev:", round(lateral_stats['overall_std'], 4) if not np.isnan(lateral_stats['overall_std']) else lateral_stats['overall_std'])
-    print("Lateral Images - Angle Min:", round(lateral_stats['min'], 4) if not np.isnan(lateral_stats['min']) else lateral_stats['min'])
-    print("Lateral Images - Angle Max:", round(lateral_stats['max'], 4) if not np.isnan(lateral_stats['max']) else lateral_stats['max'])
-    print("Lateral Images - Count:", lateral_stats['count'])
-    print("")
+def compute_all_images_stats(frontal_stats, lateral_stats):
 
     # Combine angles (Frontal + Lateral) and compute overall stats
     all_angles = []
@@ -308,20 +270,53 @@ if __name__ == "__main__":
         all_stats['min'] = current_min_all
         all_stats['max'] = current_max_all
         all_stats['count'] = len(all_angles)
+
+        return all_stats
+    
     else:
-        all_stats['overall_mean'] = np.nan
-        all_stats['overall_std'] = np.nan
-        all_stats['min'] = np.nan
-        all_stats['max'] = np.nan
-        all_stats['count'] = 0
+        return None
 
-    print("All Images - Angle Mean:", round(all_stats['overall_mean'], 4) if not np.isnan(all_stats['overall_mean']) else all_stats['overall_mean'])
-    print("All Images - Angle Std Dev:", round(all_stats['overall_std'], 4) if not np.isnan(all_stats['overall_std']) else all_stats['overall_std'])
-    print("All Images - Angle Min:", round(all_stats['min'], 4) if not np.isnan(all_stats['min']) else all_stats['min'])
-    print("All Images - Angle Max:", round(all_stats['max'], 4) if not np.isnan(all_stats['max']) else all_stats['max'])
-    print("All Images - Count:", all_stats['count'])
+# --------- MAIN ---------
 
-    # Histograms
-    compute_histogram_angles(frontal_stats['angles'], "Frontal")
-    compute_histogram_angles(lateral_stats['angles'], "Lateral")
-    compute_histogram_angles(all_stats['angles'], "All images")
+if __name__ == "__main__":
+
+    # DESCRIPTIVE STATISTICS — ANGLES (DEGREES):
+
+    frontal = "dataset/Frontal"
+    lateral = "dataset/Lateral"
+
+    # Compute descriptive statistics for angles in frontal images
+    frontal_stats = compute_overall_angle_stats(frontal)
+    # Compute descriptive statistics for angles in lateral images
+    lateral_stats = compute_overall_angle_stats(lateral)
+
+    if frontal_stats != None and lateral_stats != None:
+
+        print("Frontal Images - Angle Mean:", round(frontal_stats['overall_mean'], 4))
+        print("Frontal Images - Angle Std Dev:", round(frontal_stats['overall_std'], 4))
+        print("Frontal Images - Angle Min:", round(frontal_stats['min'], 4))
+        print("Frontal Images - Angle Max:", round(frontal_stats['max'], 4))
+        print("Frontal Images - Count:", frontal_stats['count'])
+        print("")
+
+        print("Lateral Images - Angle Mean:", round(lateral_stats['overall_mean'], 4))
+        print("Lateral Images - Angle Std Dev:", round(lateral_stats['overall_std'], 4))
+        print("Lateral Images - Angle Min:", round(lateral_stats['min'], 4))
+        print("Lateral Images - Angle Max:", round(lateral_stats['max'], 4))
+        print("Lateral Images - Count:", lateral_stats['count'])
+        print("")
+
+        # Compute combined stats for all images
+        all_stats = compute_all_images_stats(frontal_stats, lateral_stats)
+
+        if all_stats != None:
+            print("All Images - Angle Mean:", round(all_stats['overall_mean'], 4))
+            print("All Images - Angle Std Dev:", round(all_stats['overall_std'], 4))
+            print("All Images - Angle Min:", round(all_stats['min'], 4))
+            print("All Images - Angle Max:", round(all_stats['max'], 4))
+            print("All Images - Count:", all_stats['count'])
+
+            # Histograms
+            compute_histogram_angles(frontal_stats['angles'], "Frontal")
+            compute_histogram_angles(lateral_stats['angles'], "Lateral")
+            compute_histogram_angles(all_stats['angles'], "All images")
