@@ -155,16 +155,10 @@ def compute_overall_angle_stats(path):
 
     stats = {}
     stats['angles'] = angles #save the list of angles collected before
-    """
-    # Case of no angles, needed?¿
+
     if len(angles) == 0:
-        stats['overall_mean'] = np.nan
-        stats['overall_std'] = np.nan
-        stats['min'] = np.nan
-        stats['max'] = np.nan
-        stats['count'] = 0
-        return stats 
-    """
+        return None
+
     # Convert to array bc we want numerical work easier
     arr = np.array(angles, dtype=float)
 
