@@ -15,7 +15,7 @@ import imutils
 import cv2
 from matplotlib import pyplot as plt
 
-SHOW=1
+SHOW=0
 minPlateW=100
 minPlateH=30
 

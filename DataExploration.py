@@ -20,15 +20,13 @@ import os
 from imutils import perspective
 from matplotlib import pyplot as plt
 
-# OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
-from license_plate.LicensePlateDetector import detectPlates
-
-
-    
+# OWN FUNCTIONS
+from LicensePlateDetector import detectPlates
 
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-DataDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Dades\real_plates'
+#DataDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Dades\real_plates'
+DataDir = 'dataset'
 Views=['Frontal','Lateral']
 
 plateArea={}
@@ -79,6 +77,7 @@ for k in np.arange(len(Views)):
     plt.hist(imageColor[Views[k]],bins=20,edgecolor='k',color=co[k],alpha=1-0.5*k)  
 plt.title('Color Distribution')
 plt.legend(Views)   
+plt.show()
 # BoxPlots
 x=[]   
 
@@ -87,7 +86,7 @@ for k in np.arange(len(Views)):
 plt.figure()
 plt.boxplot(x,labels=Views)
 plt.title('Color Distribution')
-
+plt.show()
 ## Brightness
 # Histograms
 co=['b','r']
@@ -96,6 +95,7 @@ for k in np.arange(len(Views)):
     plt.hist(imageIlluminance[Views[k]],bins=20,edgecolor='k',color=co[k],alpha=1-0.5*k)  
 plt.title('Brightness Distribution')
 plt.legend(Views)   
+plt.show()
 # BoxPlots
 x=[]   
 
@@ -104,14 +104,15 @@ for k in np.arange(len(Views)):
 plt.figure()
 plt.boxplot(x,labels=Views)
 plt.title('Brightness Distribution')
-
+plt.show()
 # Camera ViewPoint
 co=['b','r']
 plt.figure()  
 for k in np.arange(len(Views)):
     plt.hist(plateAngle[Views[k]],bins=20,edgecolor='k',color=co[k],alpha=1-0.5*k)  
 plt.title('View Point Distribution')
-plt.legend(Views)   
+plt.legend(Views) 
+plt.show()  
 # BoxPlots
 x=[]   
 
@@ -120,3 +121,4 @@ for k in np.arange(len(Views)):
 plt.figure()
 plt.boxplot(x,labels=Views)
 plt.title('View Point Distribution')
+plt.show()
