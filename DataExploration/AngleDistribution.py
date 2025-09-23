@@ -282,8 +282,8 @@ if __name__ == "__main__":
 
     # DESCRIPTIVE STATISTICS — ANGLES (DEGREES):
 
-    frontal = "dataset/Frontal"
-    lateral = "dataset/Lateral"
+    frontal = "./dataset/Frontal"
+    lateral = "./dataset/Lateral"
 
     # Compute descriptive statistics for angles in frontal images
     frontal_stats = compute_overall_angle_stats(frontal)

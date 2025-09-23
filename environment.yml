@@ -8,5 +8,6 @@ dependencies:
   - matplotlib
   - opencv
   - seaborn
+  - ultralytics
   - pip
 

@@ -26,7 +26,7 @@ from LicensePlateDetector import detectPlates
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
 #DataDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Dades\real_plates'
-DataDir = 'dataset'
+DataDir = './dataset'
 Views=['Frontal','Lateral']
 
 plateArea={}

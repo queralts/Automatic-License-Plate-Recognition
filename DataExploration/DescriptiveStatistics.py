@@ -77,14 +77,14 @@ if __name__ == "__main__":
     # DESCRIPTIVE STATISTIC - V CHANNEL (BRIGTHNESS VALUES):
 
     # Compute descriptive statistics for V channel in frontal images
-    frontal_stats = compute_overall_V_stats("dataset/Frontal")
+    frontal_stats = compute_overall_V_stats("./dataset/Frontal")
     print("Frontal Images V Channel Statistics:")
     print("Frontal Images - Global Mean:", frontal_stats['global_mean'])
     print("Frontal Images - Global Std Dev:", frontal_stats['global_std'])
     print("\n")
 
     # Compute descriptive statistics for V channel in lateral images
-    lateral_stats = compute_overall_V_stats("dataset/Lateral")
+    lateral_stats = compute_overall_V_stats("./dataset/Lateral")
     print("Lateral Images V Channel Statistics:")
     print("Lateral Images - V Channel Mean:", lateral_stats['global_mean'])
     print("Lateral Images - V Channel Std Dev:", lateral_stats['global_std'])

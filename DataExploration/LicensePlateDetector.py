@@ -126,6 +126,6 @@ def detectPlates(image):
 
 
 if __name__ == "__main__":
-    image = cv2.imread("dataset/Frontal/0216KZP.jpg")
+    image = cv2.imread("./dataset/Frontal/0216KZP.jpg")
     detectPlates(image)
     
