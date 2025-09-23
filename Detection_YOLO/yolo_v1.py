@@ -17,7 +17,8 @@ Views=['Frontal','Lateral']
 
 
 # Load YOLO model
-model = YOLO("YOLO.pt") # Trained on COCO DataSet
+model = YOLO("yolov8n.pt")
+ # Trained on COCO DataSet
 modelclasses=np.array(list(model.names.values()))
 model.device # By default model is in GPU device: model=model.to('cpu') for execution in CPU
 
