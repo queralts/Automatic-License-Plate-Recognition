@@ -8,8 +8,8 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-
 from ultralytics import YOLO
+
 
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
@@ -18,7 +18,7 @@ DataDir = './dataset'
 Views=['Frontal','Lateral']
 
 # Load YOLO model
-model = YOLO("yolov8n.pt")
+model = YOLO("Detection_YOLO/yolov8n.pt")
 # Trained on COCO DataSet
 modelclasses=np.array(list(model.names.values()))
 model.device # By default model is in GPU device: model=model.to('cpu') for execution in CPU
@@ -48,7 +48,7 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        results[0].show()
+        #results[0].show()
 
 ####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
 
