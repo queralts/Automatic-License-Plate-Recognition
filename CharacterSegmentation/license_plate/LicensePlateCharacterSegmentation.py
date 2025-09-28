@@ -17,7 +17,7 @@ import numpy as np
 import imutils
 import cv2
 from matplotlib import pyplot as plt
-
+import os
 
 
 
@@ -86,7 +86,11 @@ def detectCharacterCandidates(image, reg, SHOW=0):
 
 
 if __name__ == "__main__":
-    data_frontal=np.load('../cropped_real_plates/Frontal/PlateRegions.npz',allow_pickle=True) 
+
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    f = os.path.join(script_dir, "../../cropped_real_plates/Frontal/PlateRegions.npz")
+
+    data_frontal=np.load(f,allow_pickle=True) 
     #use data.files to get data variables names 
     regionsImCropped_frontal=data_frontal['regionsImCropped']
 

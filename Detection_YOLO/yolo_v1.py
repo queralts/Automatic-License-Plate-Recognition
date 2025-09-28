@@ -14,7 +14,11 @@ from ultralytics import YOLO
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
 #DataDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Dades\real_plates'
-DataDir = './dataset'
+
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+DataDir = os.path.join(script_dir, "../dataset")
 Views=['Frontal','Lateral']
 
 # Load YOLO model
@@ -48,7 +52,7 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        results[0].show()
+        #results[0].show()
 
 ####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
 

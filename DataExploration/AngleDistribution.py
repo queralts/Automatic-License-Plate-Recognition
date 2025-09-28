@@ -282,8 +282,12 @@ if __name__ == "__main__":
 
     # DESCRIPTIVE STATISTICS — ANGLES (DEGREES):
 
-    frontal = "./dataset/Frontal"
-    lateral = "./dataset/Lateral"
+    # Get the directory where this script is located
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Build a path to lateral and frontal images
+    frontal = os.path.join(script_dir, "../dataset/Frontal")
+    lateral = os.path.join(script_dir, "../dataset/Lateral")
 
     # Compute descriptive statistics for angles in frontal images
     frontal_stats = compute_overall_angle_stats(frontal)

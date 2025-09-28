@@ -26,7 +26,14 @@ from LicensePlateDetector import detectPlates
 #### EXP-SET UP
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
 #DataDir=r'D:\Teaching\Grau\GrauIA\V&L\Challenges\Matricules\Dades\real_plates'
-DataDir = './dataset'
+
+
+# Get the directory where this script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Build a path to a file inside the project
+DataDir = os.path.join(script_dir, "../dataset")
+
 Views=['Frontal','Lateral']
 
 plateArea={}
