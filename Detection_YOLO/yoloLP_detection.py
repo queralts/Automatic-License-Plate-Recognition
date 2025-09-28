@@ -48,7 +48,7 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        results[0].show()
+        #results[0].show()
 
 ####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
 

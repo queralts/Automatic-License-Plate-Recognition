@@ -38,7 +38,7 @@ for View in Views:
         # load the image
         image = cv2.imread(imagePath)
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        results = model(img_rgb) 
+        results = model(img_rgb, conf=0.4) 
 
         obj=results[0].boxes.cls.cpu().numpy().astype(int) # Class IDs
         conf = results[0].boxes.conf.cpu().numpy() # Confidence scores
@@ -48,7 +48,7 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        #results[0].show()
+        results[0].show()
 
 ####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
 
@@ -68,13 +68,14 @@ df = pd.DataFrame({
     'Object': np.concatenate([frontal_labels, lateral_labels])
 })
 
-# Plot histogram
+# Plot class count distribution
 
 plt.figure(figsize=(12,6))
 sns.countplot(data=df, x='Object', hue='View', palette={'Frontal': 'paleturquoise', 'Lateral': 'plum'})
 plt.ylabel("Number of Detections")
 plt.title("Object Distribution Across Views")
 plt.show()
+
 
 ## EXPLORE CONFIDENCE SCORE DISTRIBUTION PER VIEW:
 
