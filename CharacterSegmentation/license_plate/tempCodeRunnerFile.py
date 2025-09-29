@@ -1,1 +1,0 @@
-    print("Reg points:\n", reg)
