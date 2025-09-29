@@ -15,7 +15,7 @@ import imutils
 import cv2
 from matplotlib import pyplot as plt
 
-SHOW=0
+SHOW=1
 minPlateW=100
 minPlateH=30
 
@@ -126,7 +126,8 @@ def detectPlates(image):
 
 
 if __name__ == "__main__":
-    image = cv2.imread("./dataset/Frontal/0216KZP.jpg")
+    #image = cv2.imread("./dataset/Frontal/0216KZP.jpg")
+    image = cv2.imread("./new_images/Frontal/frontal11.jpg")
     detectPlates(image)
     
 """
