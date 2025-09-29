@@ -4,10 +4,11 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - numpy<2
+  - numpy>=1.24,<2
   - matplotlib
   - opencv
   - seaborn
-  - ultralytics
+  - scikit-image
   - pip
-
+  - pip:
+      - ultralytics
