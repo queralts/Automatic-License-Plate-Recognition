@@ -87,17 +87,33 @@ def detectCharacterCandidates(image, reg, SHOW=0):
 
 if __name__ == "__main__":
 
+    # Get the directory where the script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Get file PlateRegions.npz
     f = os.path.join(script_dir, "../../cropped_real_plates/Frontal/PlateRegions.npz")
 
     data_frontal=np.load(f,allow_pickle=True) 
     #use data.files to get data variables names 
-    regionsImCropped_frontal=data_frontal['regionsImCropped']
+    regionsImCropped_frontal = data_frontal['regionsImCropped']
+    regionsIm_frontal = data_frontal['regionsIm']
+    imageIDs_frontal = data_frontal['imID']
 
-    print(type(regionsImCropped_frontal))
-    print(regionsImCropped_frontal.shape)
-    print(regionsImCropped_frontal[0])
+    # Apply pipeline on all frontal cropped images 
+    for img, reg in zip(imageIDs_frontal, regionsImCropped_frontal):
+        image_path = os.path.join(script_dir, "../../cropped_real_plates/Frontal", img+"_MLPlate0.png")
+        image = cv2.imread(image_path)
 
-    image = cv2.imread("./dataset/Frontal/0216KZP.jpg")
-    for reg in regionsImCropped_frontal:
-        plate, thresh, charCandidates = detectCharacterCandidates(image, reg, SHOW=1)
+        # Use character detection pipeline on that image
+        plate, thresh, candidates = detectCharacterCandidates(image, reg, SHOW=0)
+
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+        axs[0].imshow(cv2.cvtColor(plate, cv2.COLOR_BGR2RGB))
+        axs[0].set_title("Cropped Plate"); axs[0].axis("off")
+
+        axs[1].imshow(thresh, cmap="gray")
+        axs[1].set_title("Thresholded Plate"); axs[1].axis("off")
+
+        axs[2].imshow(candidates, cmap="gray")
+        axs[2].set_title("Character Candidates"); axs[2].axis("off")
+
+        plt.show()
