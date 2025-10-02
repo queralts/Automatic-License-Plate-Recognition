@@ -44,7 +44,14 @@ for View in Views:
         image = cv2.imread(imagePath)
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = model(img_rgb) 
+        """
 
+        print(f"\nImage: {os.path.basename(imagePath)}")
+        for box, cls_id, conf in zip(results[0].boxes.xyxy, results[0].boxes.cls, results[0].boxes.conf):
+            x1, y1, x2, y2 = box.tolist()
+            class_name = modelclasses[int(cls_id)]
+            print(f"Detected {class_name} | Confidence: {conf:.2f} | BBox: ({int(x1)}, {int(y1)}, {int(x2)}, {int(y2)})")
+        """
         obj=results[0].boxes.cls.cpu().numpy().astype(int) # Class IDs
         conf = results[0].boxes.conf.cpu().numpy() # Confidence scores
 
@@ -53,7 +60,7 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        results[0].show()
+        #results[0].show
 
 ####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
 
