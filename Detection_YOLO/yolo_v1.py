@@ -19,6 +19,7 @@ from ultralytics import YOLO
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 DataDir = os.path.join(script_dir, "../dataset")
+#DataDir = os.path.join(script_dir, "../new_images/with_Protocol")
 Views=['Frontal','Lateral']
 
 # Load YOLO model
