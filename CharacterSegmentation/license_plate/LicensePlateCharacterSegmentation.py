@@ -18,8 +18,6 @@ import imutils
 import cv2
 from matplotlib import pyplot as plt
 import os
-from skimage.feature import blob_log
-from skimage import img_as_float
 
 
 def detectCharacterCandidates(image, reg, SHOW=0):
