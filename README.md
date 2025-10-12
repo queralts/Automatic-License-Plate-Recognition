@@ -2,7 +2,7 @@
 
 This project focuses on **Automatic License Plate Recognition (ALPR)**, a computer vision task aimed at detecting and recognizing license plates from images or video. The goal of this project is not only to implement an ALPR system but also to **explore and analyze each step of the pipeline** to gain insights into the challenges and techniques involved. 
 
-![Character region detection using the Laplacian of Gaussian (LoG) blob detector](images/licenseplate.png)
+An important part of the project consists on the comparison of two distinct deep learning models for the initial step of License Plate Detection: YOLOv8 (an optimized, state-of-the-art object detection framework) and LP-Detector (a publicly available, specialized model for this task). The goal is to analyze the performance of both generalized and specialized approaches before moving on to character segmentation and recognition.
 
 ---
 
