@@ -36,6 +36,6 @@ The **key directories** in this repository are the following (corresponding to t
 
 - `CharacterSegmentation/`: Custom scripts and logic for segmenting the detected license plate image into individual characters. Involves correcting distortions on detected license plates, performing character detection using contour- and blob-based methods, as well as applying thresholding and watershed segmentation in order to extract character regions.
 
-- `Descriptors`: 
+- `Descriptors`: work in progress
 
 
