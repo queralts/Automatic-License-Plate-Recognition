@@ -286,8 +286,8 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Build a path to lateral and frontal images
-    frontal = os.path.join(script_dir, "../dataset/Frontal")
-    lateral = os.path.join(script_dir, "../dataset/Lateral")
+    frontal = os.path.join(script_dir, "../real_plates/Frontal")
+    lateral = os.path.join(script_dir, "../real_plates/Lateral")
 
     # Compute descriptive statistics for angles in frontal images
     frontal_stats = compute_overall_angle_stats(frontal)

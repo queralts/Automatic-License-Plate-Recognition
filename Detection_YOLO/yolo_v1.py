@@ -18,7 +18,7 @@ from ultralytics import YOLO
 # Get the directory where this script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-DataDir = os.path.join(script_dir, "../dataset")
+DataDir = os.path.join(script_dir, "../real_plates")
 #DataDir = os.path.join(script_dir, "../new_images/with_Protocol")
 Views=['Frontal','Lateral']
 

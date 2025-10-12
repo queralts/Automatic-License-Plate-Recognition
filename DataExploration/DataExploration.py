@@ -32,7 +32,7 @@ from LicensePlateDetector import detectPlates
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # Build a path to a file inside the project
-DataDir = os.path.join(script_dir, "../dataset")
+DataDir = os.path.join(script_dir, "../real_plates")
 
 Views=['Frontal','Lateral']
 

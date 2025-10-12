@@ -80,8 +80,8 @@ if __name__ == "__main__":
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
     # Build a path to frontal and lateral images
-    frontal = os.path.join(script_dir, "../dataset/Frontal")
-    lateral = os.path.join(script_dir, "../dataset/Lateral")
+    frontal = os.path.join(script_dir, "../real_plates/Frontal")
+    lateral = os.path.join(script_dir, "../real_plates/Lateral")
 
     # Compute descriptive statistics for V channel in frontal images
     frontal_stats = compute_overall_V_stats(frontal)
