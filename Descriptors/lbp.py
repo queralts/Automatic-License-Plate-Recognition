@@ -138,7 +138,7 @@ if __name__ == "__main__":
 
     digits = data.get("digitsIms", next(v for v in data.values())) if isinstance(data, dict) else data
     digits_imgs = [preprocess(img) for img in digits[:10]]
-
+    """
     # Visualize LBP for radii 1, 3, 5, 7
     for r in (1, 3, 5, 7):
         flbp = FeatureLBP(radius=r, method='uniform', lbp_type='simple')
@@ -151,3 +151,4 @@ if __name__ == "__main__":
             ax.axis("off")
         plt.tight_layout()
         plt.show()
+    """
