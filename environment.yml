@@ -9,6 +9,7 @@ dependencies:
   - opencv
   - seaborn
   - scikit-image
+  - scikit-learn
   - pip
   - pip:
       - ultralytics
