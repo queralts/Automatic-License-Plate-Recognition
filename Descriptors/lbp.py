@@ -13,10 +13,10 @@ __license__ = "GPL"
 __email__ = "research@davidgeronimo.com"
 __year__ = "2019"
 """
-
-from skimage import  feature
+import os, pickle
 import numpy as np
-
+import matplotlib.pyplot as plt
+from skimage import feature, io, color, transform
 
 class FeatureLBP:
     """
@@ -122,4 +122,32 @@ class FeatureLBP:
             lbp=self.block_lbp(pixel_features)
         
         return lbp
-        
+def preprocess(img, pad_px=5, scale=2.0):
+    """Pad 5px with white + resize 2× (same as your good run)."""
+    img = np.asarray(img, dtype=np.float32)
+    img = np.pad(img, pad_width=pad_px, mode="constant", constant_values=1.0)
+    img = transform.rescale(img, scale, order=1, preserve_range=True, anti_aliasing=False)
+    return img.astype(np.float32)
+
+if __name__ == "__main__":
+    # Load digits from pickle
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    pkl_path = os.path.join(script_dir, "../datasets/example_fonts/digitsIms.pkl")
+    with open(pkl_path, "rb") as f:
+        data = pickle.load(f)
+
+    digits = data.get("digitsIms", next(v for v in data.values())) if isinstance(data, dict) else data
+    digits_imgs = [preprocess(img) for img in digits[:10]]
+
+    # Visualize LBP for radii 1, 3, 5, 7
+    for r in (1, 3, 5, 7):
+        flbp = FeatureLBP(radius=r, method='uniform', lbp_type='simple')
+        fig, axes = plt.subplots(2, 5, figsize=(10, 5))
+        fig.suptitle(f"LBP images (uniform, radius={r})")
+        for i, ax in enumerate(axes.ravel()):
+            lbp_img = flbp.extract_pixel_features(digits_imgs[i])[:, :, 0]
+            ax.imshow(lbp_img, cmap="gray")  # default display (no cropping, no fixed vmin/vmax)
+            ax.set_title(str(i))
+            ax.axis("off")
+        plt.tight_layout()
+        plt.show()
