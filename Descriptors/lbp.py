@@ -61,10 +61,10 @@ class FeatureLBP:
         # Determine bins/range
         if self.method in ('nri_uniform','uniform'):
             self.n_bins = self.n_points + 2
-            self.hist_range = (0,self.n_bins + 2)
+            self.hist_range = (0,self.n_bins)
         elif self.method in ('default','ror'):
             self.n_bins = 2 ** self.n_points
-            self.hist_range = (0, 2 **self.n_bins)
+            self.hist_range = (0, self.n_bins)
     
     def block_lbp(self,lbp,grid=(4,4)):
         H, W, K = lbp.shape
@@ -122,6 +122,7 @@ class FeatureLBP:
             lbp=self.block_lbp(pixel_features)
         
         return lbp
+    
 def preprocess(img, pad_px=5, scale=2.0):
     """Pad 5px with white + resize 2× (same as your good run)."""
     img = np.asarray(img, dtype=np.float32)
@@ -146,7 +147,7 @@ if __name__ == "__main__":
         fig.suptitle(f"LBP images (uniform, radius={r})")
         for i, ax in enumerate(axes.ravel()):
             lbp_img = flbp.extract_pixel_features(digits_imgs[i])[:, :, 0]
-            ax.imshow(lbp_img, cmap="gray")  # default display (no cropping, no fixed vmin/vmax)
+            ax.imshow(lbp_img, cmap="gray")  
             ax.set_title(str(i))
             ax.axis("off")
         plt.tight_layout()
