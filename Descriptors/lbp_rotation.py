@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from skimage import transform
 from lbp import FeatureLBP 
+from matplotlib.lines import Line2D
 
 def preprocess(img):
     img = np.asarray(img, dtype=np.float32)
@@ -24,6 +25,39 @@ def to_uint8(img):
 
 def chi2_distance(a, b, eps=1e-9): #to see similarity
     return 0.5 * np.sum((a - b) ** 2 / (a + b + eps))
+
+"""
+Now we'll do the exercise 4 c), we need to plot it in 2D.
+
+"""
+def pca_2d(X):
+    X = np.asarray(X, dtype=np.float64)
+    Xc = X - X.mean(axis=0, keepdims=True)
+    C = (Xc.T @ Xc) / max(1, Xc.shape[0] - 1)
+    vals, vecs = np.linalg.eigh(C)
+    W = vecs[:, np.argsort(vals)[::-1][:2]]  # top-2 eigenvectors
+    return Xc @ W
+
+
+def scatter_2d(Z, digits, angles, title):
+    markers = {"6": "o", "9": "s"}
+    colors  = {"0": "C0", "90": "C1", "180": "C2", "270": "C3"}
+    plt.figure(figsize=(5.6, 4.4))
+    for (x, y), d, a in zip(Z, digits, angles):
+        plt.scatter(x, y, marker=markers[d], c=colors[str(a)], s=70, edgecolor="k", linewidths=0.6, label=f"{d}@{a}")
+
+    leg_items = {}
+    for d in ("6","9"):
+        for a in ("0","90","180","270"):
+            key = f"{d}@{a}"
+            if key not in leg_items:
+                leg_items[key] = Line2D([0],[0], marker=markers[d], color='w',
+                                        markerfacecolor=colors[a], markeredgecolor='k',
+                                        linestyle='', markersize=8, label=key)
+    plt.legend(leg_items.values(), leg_items.keys(), bbox_to_anchor=(1.02, 1), loc="upper left", fontsize=8)
+    plt.title(title); plt.xlabel("PC1"); plt.ylabel("PC2"); plt.tight_layout(); plt.show()
+
+
 
 
 if __name__ == "__main__":
@@ -56,7 +90,8 @@ if __name__ == "__main__":
     for im in stack9:
         H9_def.append(lbp_default.extract_image_features(to_uint8(im)))
         H9_uni.append(lbp_uniform.extract_image_features(to_uint8(im)))
-
+    """
+    # Exercise 4 b)
     # Print comparisons (χ² = difference score; 0 = identical)
     print("\n[Non-invariant] method=default")
     print("6: ",
@@ -116,3 +151,25 @@ if __name__ == "__main__":
 
     plot_hist_row("Digit 9 histograms — Non-invariant (default)", H9_def)
     plot_hist_row("Digit 9 histograms — Rotation-invariant (uniform)", H9_uni)
+    """
+    # Uniform LBP + BLOCK-WISE (keeps layout)
+    lbp_uniform_block = FeatureLBP(radius=1, method="uniform", lbp_type="block_lbp")  # default grid (4,4)
+    X_block, y_digit, y_angle = [], [], []
+    for d, stack in (("6", stack6), ("9", stack9)):
+        for a, im in zip(angles, stack):
+            X_block.append(lbp_uniform_block.extract_image_features(to_uint8(im)))
+            y_digit.append(d); y_angle.append(a)
+    X_block = np.vstack(X_block)
+    Z_block = pca_2d(X_block)
+    scatter_2d(Z_block, y_digit, y_angle, "Uniform LBP + Block-wise histogram (4×4)")
+
+    # 2) Uniform LBP + GLOBAL (1×1, order-free)
+    lbp_uniform_global = FeatureLBP(radius=1, method="uniform", lbp_type="simple")
+    X_glob, y_digit_g, y_angle_g = [], [], []
+    for d, stack in (("6", stack6), ("9", stack9)):
+        for a, im in zip(angles, stack):
+            X_glob.append(lbp_uniform_global.extract_image_features(to_uint8(im)))
+            y_digit_g.append(d); y_angle_g.append(a)
+    X_glob = np.vstack(X_glob)
+    Z_glob = pca_2d(X_glob)
+    scatter_2d(Z_glob, y_digit_g, y_angle_g, "Uniform LBP + Global histogram (1×1)")
