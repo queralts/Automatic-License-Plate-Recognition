@@ -69,11 +69,11 @@ for digit_roi in digitsIms:
     
     # Block Binary Pixel Sum
     block_features_digit = descBlckAvg.extract_image_features(digit_resized)
-    digitsFeat.setdefault('BLCK_AVG_BLOCK', []).append(block_features_digit)
+    digitsFeat.setdefault('BLCK_AVG', []).append(block_features_digit)
     
     # HOG
     hog_features_digit = descHOG.extract_image_features(digit_resized)
-    digitsFeat.setdefault('HOG_BLOCK', []).append(hog_features_digit)
+    digitsFeat.setdefault('HOG', []).append(hog_features_digit)
     
     # LBP
     # Block-wise aggregation
@@ -89,11 +89,11 @@ for alphabet_roi in alphabetIms:
     
     # Block Binary Pixel Sum
     block_features_alpha = descBlckAvg.extract_image_features(alphabet_resized)
-    alphabetFeat.setdefault('BLCK_AVG_BLOCK', []).append(block_features_alpha)
+    alphabetFeat.setdefault('BLCK_AVG', []).append(block_features_alpha)
     
     # HOG
     hog_features_alpha = descHOG.extract_image_features(alphabet_resized)
-    alphabetFeat.setdefault('HOG_BLOCK', []).append(hog_features_alpha)
+    alphabetFeat.setdefault('HOG', []).append(hog_features_alpha)
     
     # LBP
     # Block-wise aggregation
