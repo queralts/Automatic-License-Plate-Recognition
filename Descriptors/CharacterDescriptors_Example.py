@@ -19,6 +19,9 @@ from matplotlib import pyplot as plt
 from sklearn.svm import LinearSVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
 
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
@@ -31,7 +34,7 @@ from hog import FeatureHOG
 # DB Main Folder
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-DataDir = os.path.join(script_dir, "../example_fonts")
+DataDir = os.path.join(script_dir, "../datasets/example_fonts")
 ResultsDir = os.path.join(script_dir, "Results")
 
 # Load Font DataSets
@@ -161,6 +164,84 @@ for targetFeat in alphabetFeat.keys():
 
     
 ### VISUALIZE FEATURES IMAGES
+# ---- QUICK PARAM SWEEP+ ----
+# Tests a few HOG and LBP settings on digits only
+
+def resize(im, target_hw=(30, 15)):
+    h, w = target_hw
+    return cv2.resize(im, (w, h), interpolation=cv2.INTER_AREA)
+
+def safe_perplexity(n):
+    # t-SNE constraint: n > 3*perplexity + 1
+    return min(30, max(2, (n - 2) // 3))
+
+def tsne_plot(X, y, title, out_png):
+    from sklearn.manifold import TSNE
+    perp = safe_perplexity(len(X))
+    emb = TSNE(
+        n_components=2, random_state=42, init="pca",
+        learning_rate="auto", perplexity=perp
+    ).fit_transform(X)
+    plt.figure()
+    classes = np.unique(y)
+    cmap = plt.colormaps["tab20"].resampled(max(2, len(classes)))
+    for i, c in enumerate(classes):
+        m = (y == c)
+        plt.scatter(emb[m, 0], emb[m, 1], label=str(c), color=cmap(i), s=12)
+    plt.legend(loc="center left", bbox_to_anchor=(1, 0.5), fontsize="small")
+    plt.title(f"{title} (perp={perp})")
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=300, bbox_inches="tight")
+    plt.close()
+
+def quick_score(X, y, tag):
+    # ultra-simple split + LinearSVC 
+    Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.25, random_state=42, stratify=y)
+    clf = LinearSVC(dual="auto", random_state=42, max_iter=5000)
+    clf.fit(Xtr, ytr)
+    acc = accuracy_score(yte, clf.predict(Xte))
+    print(f"{tag}: accuracy={acc:.3f}")
+
+def quick_param_sweep_digits():
+    os.makedirs(ResultsDir, exist_ok=True)
+
+    hog_presets = [
+        {"orientations": 6},
+        {"orientations": 9},
+        {"orientations": 12},
+    ]
+    lbp_presets = [
+        {"radius": 1},
+        {"radius": 2},
+        {"radius": 3},
+    ]
+
+    # HOG sweeps
+    for i, kwargs in enumerate(hog_presets, 1):
+        try:
+            desc = FeatureHOG(**kwargs)
+            X = [desc.extract_image_features(resize(im)) for im in digitsIms]
+            X = np.asarray(X, dtype=np.float32)
+            tag = f"HOG{kwargs}"
+            tsne_plot(X, digitsLabels, f"Digits – {tag}", os.path.join(ResultsDir, f"Digits_{tag}.png"))
+            quick_score(X, digitsLabels, tag)
+        except TypeError as e:
+            print(f"Skipping HOG preset {kwargs}: {e}")
+
+    # LBP (block) sweeps
+    for i, kwargs in enumerate(lbp_presets, 1):
+        try:
+            desc = FeatureLBP(lbp_type="block_lbp", **kwargs)
+            X = [desc.extract_image_features(resize(im)) for im in digitsIms]
+            X = np.asarray(X, dtype=np.float32)
+            tag = f"LBP_BLOCK{kwargs}"
+            tsne_plot(X, digitsLabels, f"Digits – {tag}", os.path.join(ResultsDir, f"Digits_{tag}.png"))
+            quick_score(X, digitsLabels, tag)
+        except TypeError as e:
+            print(f"Skipping LBP preset {kwargs}: {e}")
+
+quick_param_sweep_digits()
+
 
 ## LBP Images for Digits
 
