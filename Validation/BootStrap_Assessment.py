@@ -82,6 +82,10 @@ accMLP=[]
 accSVC=[]
 accKNN=[]
 
+f1MLP=[]
+f1SVC=[]
+f1KNN=[]
+
 averages = ['micro', 'macro', 'weighted']
 recMLP={a: [] for a in averages}   
 recSVC={a: [] for a in averages}    
@@ -123,6 +127,14 @@ for kTrial in np.arange(NTrial):
         recSVC[avg_method] = rec
         precSVC[avg_method] = prec
 
+    # Weighted F1 for SVC
+    f1SVC.append(f1_score(y_test, y_pred, average='weighted', zero_division=0))
+
+    # --- inside your trial loop, at the end of the KNN block, ensure lists are appended (already correct), then add: ---
+    f1KNN.append(f1_score(y_test, y_pred, average='weighted', zero_division=0))
+
+    # --- inside your trial loop, at the end of the MLP block, ensure lists are appended (already correct), then add: ---
+    f1MLP.append(f1_score(y_test, y_pred, average='weighted', zero_division=0))
 
     ##### KNN
     ## Train Model
@@ -213,6 +225,8 @@ results_df = pandas.DataFrame(results)
 
 print("\n COMPARISON OF PRECISION, RECALL, AND ACCURACY: \n")
 print(results_df)
+
+#--------------- Exercise 2 a) ------------------
 """
 # Boxplots for AUC and Accuracy
 plt.figure(figsize=(8,4))
@@ -245,4 +259,69 @@ for data, name in zip([aucSVC, aucKNN, aucMLP], ['SVM','KNN','MLP']):
     plt.hist(data, bins=10, alpha=0.85)
     plt.xlabel('AUC'); plt.ylabel('Count'); plt.title(f'AUC distribution: {name}')
     plt.tight_layout(); plt.show()
+
+# ----------Exercise 2 b -----------------------
+
+def summarize_metric(metric_lists, metric_name):
+    rows = []
+    for model, vals in metric_lists.items():
+        s = pandas.Series(vals)
+        desc = {
+            'Model': model,
+            'Metric': metric_name,
+            'Mean': s.mean(),
+            'Median': s.median(),
+            'Std': s.std(ddof=1),
+            'Q25': s.quantile(0.25),
+            'Q50': s.quantile(0.50),
+            'Q75': s.quantile(0.75),
+            'Min': s.min(),
+            'Max': s.max()
+        }
+        rows.append(desc)
+    return pandas.DataFrame(rows)
+
+auc_stats = summarize_metric({'SVC': aucSVC, 'KNN': aucKNN, 'MLP': aucMLP}, 'AUC')
+acc_stats = summarize_metric({'SVC': accSVC, 'KNN': accKNN, 'MLP': accMLP}, 'Accuracy')
+f1_stats  = summarize_metric({'SVC': f1SVC,  'KNN': f1KNN,  'MLP': f1MLP},  'F1_weighted')
+
+all_stats = pandas.concat([auc_stats, acc_stats, f1_stats], ignore_index=True)
+
+print("\nDESCRIPTIVE STATISTICS ACROSS NTrials (AUC, Accuracy, F1_weighted):\n")
+print(all_stats.sort_values(['Metric','Model']).to_string(index=False))
+
+overall = (
+    all_stats.pivot_table(index='Model', columns='Metric', values='Mean')
+    .assign(Overall_Mean=lambda df: df.mean(axis=1))
+    .reset_index()
+    .sort_values('Overall_Mean', ascending=False)
+)
+print("\nOVERALL ranking (AUC, Accuracy, F1_weighted):\n")
+print(overall.to_string(index=False))
+
+
+# ------------ Exercise 2 c) ------------
+
+def print_metric_ranges(all_stats):
+
+    df = all_stats.loc[:, ['Model', 'Metric', 'Mean', 'Std']].copy()
+
+    metric_label = {'AUC': 'AUC', 'Accuracy': 'Accuracy', 'F1_weighted': 'F1'}
+
+    model_order = ['KNN', 'MLP', 'SVC']
+    metric_order = ['AUC', 'Accuracy', 'F1_weighted']
+
+    df['Mean'] = df['Mean'].round(3)
+    df['Std']  = df['Std'].round(3)
+
+    for model in model_order:
+        row = df[df['Model'] == model].set_index('Metric').reindex(metric_order)
+        parts = []
+        for met in metric_order:
+            if met in row.index and not row.loc[met, ['Mean','Std']].isna().any():
+                parts.append(f"{metric_label[met]} = {row.loc[met, 'Mean']:.3f} ± {row.loc[met, 'Std']:.3f}")
+        print(f"\n{model}: " + ", ".join(parts))
+
+print("\nMETRIC RANGES (mean ± std):")
+print_metric_ranges(all_stats)
 """
