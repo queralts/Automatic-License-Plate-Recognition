@@ -20,6 +20,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 
 from sklearn.calibration import CalibratedClassifierCV, CalibrationDisplay
+from collections import defaultdict
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
@@ -34,7 +35,7 @@ from sklearn.metrics import precision_recall_fscore_support,precision_score, rec
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-ResultsDir = os.path.join(script_dir, "../validation_dataset")
+ResultsDir = os.path.join(script_dir, "../datasets/validation_dataset")
 
 # Load Font DataSets
 fileout=os.path.join(ResultsDir,'AlphabetDescriptors')+'.pkl'    
@@ -70,7 +71,8 @@ y=np.concatenate((digitsLab,charsLab))
 ### STEP1. TRAIN BINARY CLASSIFIERS [CHARACTER VS DIGITS]
 
 # Initialize variables
-NTrial=1
+#NTrial=1
+NTrial = 30
 
 aucMLP=[]
 aucSVC=[]
@@ -80,15 +82,14 @@ accMLP=[]
 accSVC=[]
 accKNN=[]
 
-recMLP={}
-recSVC={}
-recKNN={}
-
-precMLP={}
-precSVC={}
-precKNN={}
-
 averages = ['micro', 'macro', 'weighted']
+recMLP={a: [] for a in averages}   
+recSVC={a: [] for a in averages}    
+recKNN={a: [] for a in averages}
+
+precMLP={a: [] for a in averages}   
+precSVC={a: [] for a in averages}
+precKNN={a: [] for a in averages}
 
 for kTrial in np.arange(NTrial):
     # Random Train-test split
@@ -142,11 +143,10 @@ for kTrial in np.arange(NTrial):
     accKNN.append(acc)
     
     for avg_method in averages:
-        prec = precision_score(y_test, y_pred, average=avg_method)
-        rec = recall_score(y_test, y_pred, average=avg_method)
-
-        recKNN[avg_method] = rec
-        precKNN[avg_method] = prec
+        prec = precision_score(y_test, y_pred, average=avg_method, zero_division=0)
+        rec = recall_score(y_test, y_pred, average=avg_method, zero_division=0)
+        recKNN[avg_method].append(rec)
+        precKNN[avg_method].append(prec)
 
     #### MLP
     ## Train Model
@@ -167,11 +167,10 @@ for kTrial in np.arange(NTrial):
     accMLP.append(acc)
     
     for avg_method in averages:
-        prec = precision_score(y_test, y_pred, average=avg_method)
-        rec = recall_score(y_test, y_pred, average=avg_method)
-
-        recMLP[avg_method] = rec
-        precMLP[avg_method] = prec
+        prec = precision_score(y_test, y_pred, average=avg_method, zero_division=0)
+        rec = recall_score(y_test, y_pred, average=avg_method, zero_division=0)
+        recMLP[avg_method].append(rec)
+        precMLP[avg_method].append(prec)
 
 #### STEP2. ANALYZE RESULTS
 ## Visual Exploration
@@ -214,4 +213,36 @@ results_df = pandas.DataFrame(results)
 
 print("\n COMPARISON OF PRECISION, RECALL, AND ACCURACY: \n")
 print(results_df)
+"""
+# Boxplots for AUC and Accuracy
+plt.figure(figsize=(8,4))
+plt.boxplot([aucSVC, aucKNN, aucMLP], labels=['SVM','KNN','MLP'])
+plt.ylabel('AUC'); plt.title('AUC across trials (boxplot)')
+plt.tight_layout(); plt.show()
 
+plt.figure(figsize=(8,4))
+plt.boxplot([accSVC, accKNN, accMLP], labels=['SVM','KNN','MLP'])
+plt.ylabel('Accuracy'); plt.title('Accuracy across trials (boxplot)')
+plt.tight_layout(); plt.show()
+
+# Barplots of mean ± std for AUC and Accuracy
+def bar_mean_std(values_list, labels, title, ylabel):
+    means = [np.mean(v) for v in values_list]
+    stds  = [np.std(v)  for v in values_list]
+    x = np.arange(len(values_list))
+    plt.figure(figsize=(8,4))
+    plt.bar(x, means, yerr=stds, capsize=6)
+    plt.xticks(x, labels)
+    plt.ylabel(ylabel); plt.title(title)
+    plt.tight_layout(); plt.show()
+
+bar_mean_std([aucSVC, aucKNN, aucMLP], ['SVM','KNN','MLP'], 'AUC: mean ± std', 'AUC')
+bar_mean_std([accSVC, accKNN, accMLP], ['SVM','KNN','MLP'], 'Accuracy: mean ± std', 'Accuracy')
+
+# Histograms of AUC per model
+for data, name in zip([aucSVC, aucKNN, aucMLP], ['SVM','KNN','MLP']):
+    plt.figure(figsize=(8,4))
+    plt.hist(data, bins=10, alpha=0.85)
+    plt.xlabel('AUC'); plt.ylabel('Count'); plt.title(f'AUC distribution: {name}')
+    plt.tight_layout(); plt.show()
+"""
