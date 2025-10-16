@@ -35,7 +35,7 @@ from sklearn.metrics import precision_recall_fscore_support,precision_score, rec
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-ResultsDir = os.path.join(script_dir, "../datasets/validation_dataset")
+ResultsDir = os.path.join(script_dir, "../validation_dataset")
 
 # Load Font DataSets
 fileout=os.path.join(ResultsDir,'AlphabetDescriptors')+'.pkl'    
@@ -72,7 +72,7 @@ y=np.concatenate((digitsLab,charsLab))
 
 # Initialize variables
 #NTrial=1
-NTrial = 30
+NTrial = 20
 
 aucMLP=[]
 aucSVC=[]
@@ -86,7 +86,7 @@ f1MLP=[]
 f1SVC=[]
 f1KNN=[]
 
-averages = ['micro', 'macro', 'weighted']
+averages = ['micro', 'macro', 'weighted', 'class0', 'class1', 'mean']
 recMLP={a: [] for a in averages}   
 recSVC={a: [] for a in averages}    
 recKNN={a: [] for a in averages}
@@ -94,6 +94,8 @@ recKNN={a: [] for a in averages}
 precMLP={a: [] for a in averages}   
 precSVC={a: [] for a in averages}
 precKNN={a: [] for a in averages}
+
+avgs = ['micro', 'macro', 'weighted']
 
 for kTrial in np.arange(NTrial):
     # Random Train-test split
@@ -117,15 +119,23 @@ for kTrial in np.arange(NTrial):
                                        zero_division=0)
 
     # Compute and Store metric information for SVC
+    recSVC['class0'].append(rec[0])
+    recSVC['class1'].append(rec[1])
+    recSVC['mean'].append(np.mean(rec))
+
+    precSVC['class0'].append(prec[0])
+    precSVC['class1'].append(prec[1])
+    precSVC['mean'].append(np.mean(prec))
+
     acc = accuracy_score(y_test, y_pred)
     accSVC.append(acc)
 
-    for avg_method in averages:
+    for avg_method in avgs:
         prec = precision_score(y_test, y_pred, average=avg_method)
         rec = recall_score(y_test, y_pred, average=avg_method)
 
-        recSVC[avg_method] = rec
-        precSVC[avg_method] = prec
+        recSVC[avg_method].append(rec)
+        precSVC[avg_method].append(prec)
 
     # Weighted F1 for SVC
     f1SVC.append(f1_score(y_test, y_pred, average='weighted', zero_division=0))
@@ -151,10 +161,18 @@ for kTrial in np.arange(NTrial):
                                        zero_division=0)
     
     # Compute and Store metric information for KNN
+    recKNN['class0'].append(rec[0])
+    recKNN['class1'].append(rec[1])
+    recKNN['mean'].append(np.mean(rec))
+
+    precKNN['class0'].append(prec[0])
+    precKNN['class1'].append(prec[1])
+    precKNN['mean'].append(np.mean(prec))
+
     acc = accuracy_score(y_test, y_pred)
     accKNN.append(acc)
     
-    for avg_method in averages:
+    for avg_method in avgs:
         prec = precision_score(y_test, y_pred, average=avg_method, zero_division=0)
         rec = recall_score(y_test, y_pred, average=avg_method, zero_division=0)
         recKNN[avg_method].append(rec)
@@ -175,16 +193,25 @@ for kTrial in np.arange(NTrial):
                                        zero_division=0)
 
     # Compute and Store metric information for MLP
+    recMLP['class0'].append(rec[0])
+    recMLP['class1'].append(rec[1])
+    recMLP['mean'].append(np.mean(rec))
+
+    precMLP['class0'].append(prec[0])
+    precMLP['class1'].append(prec[1])
+    precMLP['mean'].append(np.mean(prec))
+
     acc = accuracy_score(y_test, y_pred)
     accMLP.append(acc)
     
-    for avg_method in averages:
+    for avg_method in avgs:
         prec = precision_score(y_test, y_pred, average=avg_method, zero_division=0)
         rec = recall_score(y_test, y_pred, average=avg_method, zero_division=0)
         recMLP[avg_method].append(rec)
         precMLP[avg_method].append(prec)
 
 #### STEP2. ANALYZE RESULTS
+
 ## Visual Exploration
 #recSVC=np.stack(recSVC)
 #recKNN=np.stack(recKNN)
@@ -200,6 +227,53 @@ plt.xlabel("Trial", fontsize=15)
 plt.ylabel("AUC", fontsize=15)
 plt.show()
 
+# Create an array for trial numbers
+trials = np.arange(1, NTrial+1)
+
+# Plot Accuracy across trials
+plt.figure(figsize=(8,4))
+plt.plot(trials, accSVC, marker='o', c='b', markersize=8, label='SVC')
+plt.plot(trials, accKNN, marker='o', c='r', markersize=8, label='KNN')
+plt.plot(trials, accMLP, marker='o', c='g', markersize=8, label='MLP')
+plt.xlabel('Trial', fontsize=12)
+plt.ylabel('Accuracy', fontsize=12)
+plt.title('Accuracy across trials')
+plt.xticks(trials)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Plot Precision (mean across classes) across trials
+plt.figure(figsize=(8,4))
+plt.plot(trials, precSVC['mean'], marker='o', c='b', markersize=8, label='SVC')
+plt.plot(trials, precKNN['mean'], marker='o', c='r', markersize=8, label='KNN')
+plt.plot(trials, precMLP['mean'], marker='o', c='g', markersize=8, label='MLP')
+plt.xlabel('Trial', fontsize=12)
+plt.ylabel('Precision (mean)', fontsize=12)
+plt.title('Precision across trials')
+plt.xticks(trials)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# Plot Recall (mean across classes) across trials
+plt.figure(figsize=(8,4))
+plt.plot(trials, recSVC['mean'], marker='o', c='b', markersize=8, label='SVC')
+plt.plot(trials, recKNN['mean'], marker='o', c='r', markersize=8, label='KNN')
+plt.plot(trials, recMLP['mean'], marker='o', c='g', markersize=8, label='MLP')
+plt.xlabel('Trial', fontsize=12)
+plt.ylabel('Recall (mean)', fontsize=12)
+plt.title('Recall across trials')
+plt.xticks(trials)
+plt.legend()
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+
+# METRIC ANALYSIS:
+
 # Store all metrics for comparison
 results = []
 
@@ -211,22 +285,44 @@ models = {
 }
 
 for model_name, (prec_dict, rec_dict, acc_list) in models.items():
-    for avg_method in averages:
+    for avg_method in avgs:
         results.append({
             'Model': model_name,
             'Average': avg_method,
-            'Precision': prec_dict[avg_method],
-            'Recall': rec_dict[avg_method],
-            'Accuracy': np.mean(acc_list)  
+            'Precision': prec_dict[avg_method][0],
+            'Recall': rec_dict[avg_method][0],
+            'Accuracy': acc_list[0]
         })
 
 # Convert to DataFrame for display
 results_df = pandas.DataFrame(results)
-
+# Compare results for the first run
 print("\n COMPARISON OF PRECISION, RECALL, AND ACCURACY: \n")
 print(results_df)
 
-#--------------- Exercise 2 a) ------------------
+# Compare average scores to precision and recall scores per class:
+comparison = []
+score = ['class0', 'class1', 'mean']
+
+for model_name, (prec_dict, rec_dict, acc_list) in models.items():
+    for trial_idx in range(NTrial):
+        for metric in score:
+            comparison.append({
+                'Model': model_name,
+                'Trial': trial_idx + 1,
+                'Method': metric,
+                'Precision': prec_dict[metric][trial_idx],
+                'Recall': rec_dict[metric][trial_idx],
+            })
+
+# Convert to DataFrame for display
+comparison_df = pandas.DataFrame(comparison)
+comparison_df = comparison_df.sort_values(by=['Trial', 'Model', 'Method']).reset_index(drop=True)
+# Show results
+print("\n COMPARISON OF PRECISION AND RECALL ACROSS CLASSES \n")
+print(comparison_df)
+
+#--------------- VISUALIZE CLASSIFIERS PERFORMANCE ------------------
 """
 # Boxplots for AUC and Accuracy
 plt.figure(figsize=(8,4))
@@ -260,7 +356,7 @@ for data, name in zip([aucSVC, aucKNN, aucMLP], ['SVM','KNN','MLP']):
     plt.xlabel('AUC'); plt.ylabel('Count'); plt.title(f'AUC distribution: {name}')
     plt.tight_layout(); plt.show()
 
-# ----------Exercise 2 b -----------------------
+# ---------- COMPUTE METRICS FOR ALL CLASSIFIERS -----------------------
 
 def summarize_metric(metric_lists, metric_name):
     rows = []
@@ -300,7 +396,7 @@ print("\nOVERALL ranking (AUC, Accuracy, F1_weighted):\n")
 print(overall.to_string(index=False))
 
 
-# ------------ Exercise 2 c) ------------
+# ------------ COMPUTE METRIC RANGES  ------------
 
 def print_metric_ranges(all_stats):
 
