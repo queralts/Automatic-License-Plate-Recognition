@@ -14,6 +14,7 @@ from matplotlib import pyplot as plt
 import scipy
 from scipy.stats import f_oneway
 
+
 # Classifiers
 # include differnet classifiers
 from sklearn.svm import LinearSVC, SVC
@@ -75,7 +76,7 @@ y=np.concatenate((digitsLab,charsLab))
 
 # Initialize variables
 #NTrial=1
-NTrial = 20
+NTrial = 50
 
 aucMLP=[]
 aucSVC=[]
@@ -361,7 +362,7 @@ for pair, pval in pairs.items():
 #print("\nANOVA TEST (AUC across classifiers):")
 #print(f"F-statistic = {F_stat:.4f}, p-value = {p_ANOVA:.4e}")
 #--------------- VISUALIZE CLASSIFIERS PERFORMANCE ------------------
-"""
+
 # Boxplots for AUC and Accuracy
 plt.figure(figsize=(8,4))
 plt.boxplot([aucSVC, aucKNN, aucMLP], labels=['SVM','KNN','MLP'])
@@ -458,4 +459,136 @@ def print_metric_ranges(all_stats):
 
 print("\nMETRIC RANGES (mean ± std):")
 print_metric_ranges(all_stats)
-"""
+
+
+# ------------ COMPUTE CONFIDENCE INTERVALS  ------------
+
+# Function to compute Confidence Interval
+def compute_CI(data):
+    conf_interval = scipy.stats.t.interval(confidence=0.95, df=len(data)-1, 
+                                           loc=np.mean(data), scale= scipy.stats.sem(data))
+    
+    return conf_interval
+
+# Function to identify overlapping CIs
+def intervals_overlap(ci1, ci2):
+
+    low1, high1 = ci1
+    low2, high2 = ci2
+    return not (high1 < low2 or high2 < low1)
+
+# Function to visualize overlapping CIs
+def visualize_overlap(groups, conf_intervals):
+    for metric_name, models in groups.items():
+        print(f"\n--- {metric_name} Confidence Interval Overlaps ---")
+        for i in range(len(models)):
+            for j in range(i+1, len(models)):
+                m1, m2 = models[i], models[j]
+                overlap = intervals_overlap(conf_intervals[m1], conf_intervals[m2])
+                print(f"{m1} vs {m2}: {'OVERLAP' if overlap else 'NO overlap'}")
+
+# Function to compare computed CIs 
+# with previously computed metric ranges
+def compare_CI_ranges(ranges, conf_intervals):
+    for metric in ranges.keys():
+        metric_range = ranges[metric]
+        ci_now = conf_intervals[metric]
+        
+        overlap = intervals_overlap(metric_range, ci_now)
+        
+        print(f"{metric}:")
+        print(f"  Metric Ranges: [{metric_range[0]:.3f}, {metric_range[1]:.3f}]")
+        print(f"  Current CI:       [{ci_now[0]:.3f}, {ci_now[1]:.3f}]")
+        print(f"  Overlap: {'YES' if overlap else 'NO'}\n")
+
+metrics_to_check = {
+    'AUC_SVC': aucSVC,
+    'AUC_KNN': aucKNN,
+    'AUC_MLP': aucMLP,
+    'ACC_SVC': accSVC,
+    'ACC_KNN': accKNN,
+    'ACC_MLP': accMLP,
+    'F1_SVC': f1SVC,
+    'F1_KNN': f1KNN,
+    'F1_MLP': f1MLP
+}
+
+# Compute and store confidence intervals
+conf_intervals = {}
+for k, v in metrics_to_check.items():
+    conf_intervals[k] = compute_CI(v)
+
+# Group the metrics by type
+groups = {
+    'AUC': ['AUC_SVC', 'AUC_KNN', 'AUC_MLP'],
+    'ACC': ['ACC_SVC', 'ACC_KNN', 'ACC_MLP'],
+    'F1':  ['F1_SVC',  'F1_KNN',  'F1_MLP']
+}
+
+# Check whether intervals overlap
+visualize_overlap(groups, conf_intervals)
+print("\n")
+
+# Compare confidence intervals with metric ranges
+
+# Metric Ranges (mean ± std)
+ranges = {
+    'AUC_KNN': (0.894 - 0.037, 0.894 + 0.037),
+    'ACC_KNN': (0.833 - 0.040, 0.833 + 0.040),
+    'F1_KNN':  (0.880 - 0.033, 0.880 + 0.033),
+
+    'AUC_MLP': (0.947 - 0.030, 0.947 + 0.030),
+    'ACC_MLP': (0.899 - 0.032, 0.899 + 0.032),
+    'F1_MLP':  (0.880 - 0.033, 0.880 + 0.033),
+
+    'AUC_SVC': (0.945 - 0.026, 0.945 + 0.026),
+    'ACC_SVC': (0.881 - 0.033, 0.881 + 0.033),
+    'F1_SVC':  (0.880 - 0.033, 0.880 + 0.033)
+}
+
+# Compare CIs with metric ranges
+compare_CI_ranges(ranges, conf_intervals)
+
+# Function to compute intervals with bootstrap sampling (sampling with replacement)
+def bootstrap_ci(data, func=np.mean, n_resamples=1000, ci=0.95, random_state=None):
+    rng = np.random.default_rng(random_state)
+    stats = []
+    n = len(data)
+    
+    for _ in range(n_resamples):
+        sample = rng.choice(data, size=n, replace=True)
+        stats.append(func(sample))
+    
+    alpha = (1 - ci) / 2
+    lower = np.percentile(stats, 100 * alpha)
+    upper = np.percentile(stats, 100 * (1 - alpha))
+    return lower, upper
+
+# Compute CIs for several bootstrap samplings
+boot_conf_intervals = {}
+n_bootstraps = 1000
+random_seed = 42
+
+# Compare Bootrstrap CIs with normal CIs:
+for metric_name, metric_values in metrics_to_check.items():
+    data = np.array(metric_values)
+    ci_lower, ci_upper = bootstrap_ci(data, func=np.mean, n_resamples=n_bootstraps,
+                                      ci=0.95, random_state=random_seed)
+    boot_conf_intervals[metric_name] = (ci_lower, ci_upper)
+
+visualize_overlap(groups, boot_conf_intervals)
+
+# Compare Bootstrap CI's with metric ranges
+compare_CI_ranges(ranges, conf_intervals)
+
+# Compare CI's length according to NTrial:
+def visualize_CI_length(ci_length, type):
+    print(f"\n-------{type}-------\n")
+    for k, v in ci_length.items():
+        print(f"{k}: {v:.3f}")
+
+boot_ci_lengths = {k: v[1] - v[0] for k, v in boot_conf_intervals.items()}
+ci_lengths = {k: v[1] - v[0] for k, v in conf_intervals.items()}
+
+visualize_CI_length(boot_ci_lengths, "BOOTSTRAP CI LENGTHS")
+visualize_CI_length(ci_lengths, "T-BASED CI LENGTHS")
