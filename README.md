@@ -11,13 +11,6 @@ An important part of the project consists on the comparison of two distinct deep
 #### 1. Environment
 This project requires Python 3.x and specific dependencies. We recommend using Conda or a virtual environment.
 
-First, clone the repository:
-
-```bash
-git clone [https://github.com/your-username/Automatic-License-Plate-Recognition.git](https://github.com/your-username/Automatic-License-Plate-Recognition.git)
-cd Automatic-License-Plate-Recognition
-```
-
 The required dependencies are specified in environment.yml. Create and activate the environment:
 
 ```bash
