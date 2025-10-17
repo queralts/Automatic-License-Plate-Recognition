@@ -12,6 +12,7 @@ import pandas
 import os
 from matplotlib import pyplot as plt
 import scipy
+from scipy.stats import f_oneway
 
 # Classifiers
 # include differnet classifiers
@@ -26,6 +27,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import precision_recall_fscore_support,precision_score, recall_score, f1_score, accuracy_score, classification_report
 
+from scipy.stats import ttest_ind
+
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
 
 
@@ -35,7 +38,7 @@ from sklearn.metrics import precision_recall_fscore_support,precision_score, rec
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-ResultsDir = os.path.join(script_dir, "../validation_dataset")
+ResultsDir = os.path.join(script_dir, "../datasets/validation_dataset")
 
 # Load Font DataSets
 fileout=os.path.join(ResultsDir,'AlphabetDescriptors')+'.pkl'    
@@ -322,6 +325,41 @@ comparison_df = comparison_df.sort_values(by=['Trial', 'Model', 'Method']).reset
 print("\n COMPARISON OF PRECISION AND RECALL ACROSS CLASSES \n")
 print(comparison_df)
 
+#------------- COMPUTE STUDENT'S T-TEST FOR ALL PAIRS ---------------
+# Compute differences between classifiers
+diff_SVC_KNN = np.array(aucSVC) - np.array(aucKNN)
+diff_SVC_MLP = np.array(aucSVC) - np.array(aucMLP)
+diff_KNN_MLP = np.array(aucKNN) - np.array(aucMLP)
+
+# Perform one-sample t-tests for each pairing
+TStudent_SVC_KNN, p_SVC_KNN = scipy.stats.ttest_1samp(diff_SVC_KNN, 0.0)
+TStudent_SVC_MLP, p_SVC_MLP = scipy.stats.ttest_1samp(diff_SVC_MLP, 0.0)
+TStudent_KNN_MLP, p_KNN_MLP = scipy.stats.ttest_1samp(diff_KNN_MLP, 0.0)
+
+# Display results
+print("\nT-TEST RESULTS (TStudent, pval) for mean difference = 0:")
+print(f"SVC - KNN:  TStudent = {TStudent_SVC_KNN:.4f},  pval = {p_SVC_KNN:.4e}")
+print(f"SVC - MLP:  TStudent = {TStudent_SVC_MLP:.4f},  pval = {p_SVC_MLP:.4e}")
+print(f"KNN - MLP:  TStudent = {TStudent_KNN_MLP:.4f},  pval = {p_KNN_MLP:.4e}")
+
+# Then we want to determine significance (p < 0.01)
+pairs = {
+    "SVC vs KNN": p_SVC_KNN,
+    "SVC vs MLP": p_SVC_MLP,
+    "KNN vs MLP": p_KNN_MLP
+}
+
+print("\nSIGNIFICANTLY DIFFERENT CLASSIFIERS (p < 0.01):")
+for pair, pval in pairs.items():
+    if pval < 0.01:
+        print(f"  {pair} are significant difference (p={pval:.4e})")
+    else:
+        print(f"  {pair} are NOT significantly different (p={pval:.4e})")
+
+
+#F_stat, p_ANOVA = f_oneway(aucSVC, aucKNN, aucMLP)
+#print("\nANOVA TEST (AUC across classifiers):")
+#print(f"F-statistic = {F_stat:.4f}, p-value = {p_ANOVA:.4e}")
 #--------------- VISUALIZE CLASSIFIERS PERFORMANCE ------------------
 """
 # Boxplots for AUC and Accuracy
