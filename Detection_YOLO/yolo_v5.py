@@ -1,3 +1,8 @@
+"""
+In this script, we will use the YOLOv5 model to perform inference 
+and compare its results with those obtained using YOLOv8.
+"""
+
 # import the necessary packages
 import numpy as np
 import cv2
@@ -18,12 +23,12 @@ from ultralytics import YOLO
 # Get the directory where this script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-#DataDir = os.path.join(script_dir, "../dataset")
 DataDir = os.path.join(script_dir, "../real_plates")
+#DataDir = os.path.join(script_dir, "../new_images/with_Protocol")
 Views=['Frontal','Lateral']
 
 # Load YOLO model
-model = YOLO("Detection_YOLO/LP-detection.pt")
+model = YOLO("Detection_YOLO/yolov5nu.pt")
 # Trained on COCO DataSet
 modelclasses=np.array(list(model.names.values()))
 model.device # By default model is in GPU device: model=model.to('cpu') for execution in CPU
@@ -43,15 +48,8 @@ for View in Views:
         # load the image
         image = cv2.imread(imagePath)
         img_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        results = model(img_rgb) 
-        """
+        results = model(img_rgb, conf=0.4) 
 
-        print(f"\nImage: {os.path.basename(imagePath)}")
-        for box, cls_id, conf in zip(results[0].boxes.xyxy, results[0].boxes.cls, results[0].boxes.conf):
-            x1, y1, x2, y2 = box.tolist()
-            class_name = modelclasses[int(cls_id)]
-            print(f"Detected {class_name} | Confidence: {conf:.2f} | BBox: ({int(x1)}, {int(y1)}, {int(x2)}, {int(y2)})")
-        """
         obj=results[0].boxes.cls.cpu().numpy().astype(int) # Class IDs
         conf = results[0].boxes.conf.cpu().numpy() # Confidence scores
 
@@ -60,51 +58,13 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        #results[0].show
-
-        # Save cropped license plate image
-        save_dir = os.path.join(script_dir, "cropped_plates", View)
-        os.makedirs(save_dir, exist_ok=True)
-
-        # Loop through all detections in the image
-        for i, (box, cls_id, conf) in enumerate(zip(results[0].boxes.xyxy, results[0].boxes.cls, results[0].boxes.conf)):
-            x1, y1, x2, y2 = map(int, box.tolist())
-            class_name = modelclasses[int(cls_id)]
-
-            # Crop the detected region
-            crop = image[y1:y2, x1:x2]
-
-            # Skip invalid crops
-            if crop.size == 0:
-                continue
-
-            # Build filename: originalImageName_YOLOPlate.png
-            base_name = os.path.splitext(os.path.basename(imagePath))[0]
-            out_name = f"{base_name}_YOLOPlate.png"
-            out_path = os.path.join(save_dir, out_name)
-
-            # If multiple plates in one image, append an index
-            if i > 0:
-                out_name = f"{base_name}_YOLOPlate_{i+1}.png"
-                out_path = os.path.join(save_dir, out_name)
-
-            # Save cropped plate
-            cv2.imwrite(out_path, crop)
-            print(f"Saved: {out_path}")
-
-####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
+        #results[0].show()
 
 ## EXPLORE OBJECTS DETECTED PER VIEW:
 
 # Flatten lists into a single array
 frontal_objs = np.concatenate(yoloObj['Frontal'])
 lateral_objs = np.concatenate(yoloObj['Lateral'])
-
-print("Detected plates in frontal images:", len(frontal_objs))
-print("Total frontal images (total plates to detect): 33")
-
-print("Detected plates in lateral images:", len(lateral_objs))
-print("Total lateral images (total plates to detect): 66")
 
 # Map class IDs to class names
 frontal_labels = np.array([modelclasses[i] for i in frontal_objs])
@@ -113,16 +73,17 @@ lateral_labels = np.array([modelclasses[i] for i in lateral_objs])
 # Create a DataFrame
 df = pd.DataFrame({
     'View': ['Frontal']*len(frontal_labels) + ['Lateral']*len(lateral_labels),
-    'Class': np.concatenate([frontal_labels, lateral_labels])
+    'Object': np.concatenate([frontal_labels, lateral_labels])
 })
 
-# Plot histogram
+# Plot class count distribution
 
 plt.figure(figsize=(12,6))
-sns.countplot(data=df, x='Class', hue='View', palette={'Frontal': 'paleturquoise', 'Lateral': 'plum'})
+sns.countplot(data=df, x='Object', hue='View', palette={'Frontal': 'paleturquoise', 'Lateral': 'plum'})
 plt.ylabel("Number of Detections")
-plt.title("Class Distribution Across Views")
+plt.title("Object Distribution Across Views")
 plt.show()
+
 
 ## EXPLORE CONFIDENCE SCORE DISTRIBUTION PER VIEW:
 
@@ -145,9 +106,9 @@ df_conf_frontal = pd.DataFrame({
 
 plt.figure(figsize=(12,6))
 sns.boxplot(data=df_conf_frontal, x='Object', y='Confidence', palette='pastel')
-plt.title("Frontal View: Confidence Distribution per class")
+plt.title("Frontal View: Confidence Distribution per Object")
 plt.ylabel("Confidence Score")
-plt.xlabel("Detected Class")
+plt.xlabel("Detected Object")
 plt.show()
 
 # Lateral view confidence scores distribution------
@@ -170,7 +131,7 @@ df_conf_lateral = pd.DataFrame({
 
 plt.figure(figsize=(12,6))
 sns.boxplot(data=df_conf_lateral, x='Object', y='Confidence', palette='pastel')
-plt.title("Lateral View: Confidence Distribution per class")
+plt.title("Lateral View: Confidence Distribution per Object")
 plt.ylabel("Confidence Score")
-plt.xlabel("Detected Class")
+plt.xlabel("Detected Object")
 plt.show()

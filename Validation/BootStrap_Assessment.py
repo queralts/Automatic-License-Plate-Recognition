@@ -39,7 +39,7 @@ from scipy.stats import ttest_ind
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
 # DB Main Folder (MODIFY ACORDING TO YOUR LOCAL PATH)
-ResultsDir = os.path.join(script_dir, "../datasets/validation_dataset")
+ResultsDir = os.path.join(script_dir, "../validation_dataset")
 
 # Load Font DataSets
 fileout=os.path.join(ResultsDir,'AlphabetDescriptors')+'.pkl'    

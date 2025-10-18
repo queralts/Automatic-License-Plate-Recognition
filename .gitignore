@@ -6,3 +6,5 @@ new_images/
 example_fonts/
 cropped_real_plates/
 validation_dataset/
+cropped_plates/
+cropped_characters/

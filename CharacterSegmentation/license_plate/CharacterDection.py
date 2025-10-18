@@ -234,6 +234,28 @@ if __name__ == "__main__":
 
         mask, bboxes = postprocess_log_candidates(log_response)
 
+        # Save cropped license plate characters
+        save_dir = os.path.join(script_dir, "../cropped_characters")
+        os.makedirs(save_dir, exist_ok=True)
+
+        base_name = img  
+
+        for i, (x, y, w, h) in enumerate(bboxes):
+            # Crop the character from the plate image
+            char_crop = plate[y:y+h, x:x+w]
+
+            # Skip invalid crops
+            if char_crop.size == 0:
+                continue
+
+            # Build filename: originalImageName_YOLOPlate_Char#.png
+            out_name = f"{base_name}_YOLOPlate_Char{i+1}.png"
+            out_path = os.path.join(save_dir, out_name)
+
+            # Save as PNG
+            cv2.imwrite(out_path, char_crop)
+            print(f"Saved character: {out_path}")
+
         fig, axs = plt.subplots(1, 5, figsize=(25, 5))  # 5 plots
 
         axs[0].imshow(cv2.cvtColor(plate, cv2.COLOR_BGR2RGB))
