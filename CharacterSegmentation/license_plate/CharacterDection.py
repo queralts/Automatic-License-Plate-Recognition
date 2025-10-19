@@ -232,6 +232,7 @@ if __name__ == "__main__":
         sigma = median_r / 2*np.sqrt(2)
         candidates, log_response = gaussian_laplace_detector(thresh, sigma, 0.03)
 
+        # Postprocess LoG candidates (initial cleaning)
         mask, bboxes = postprocess_log_candidates(log_response)
 
         # Save cropped license plate characters
@@ -275,5 +276,4 @@ if __name__ == "__main__":
 
         axs[4].imshow(mask, cmap="gray")
         axs[4].set_title("Postprocessed Regions"); axs[4].axis("off")
-
         plt.show()

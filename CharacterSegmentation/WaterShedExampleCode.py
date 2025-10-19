@@ -14,8 +14,14 @@ __email__ = "debora,gtorres@cvc.uab.es"
 
 import cv2
 import numpy as np
+import os
 
-plate = cv2.imread("new_images/with_Protocol/Lateral/0084HNC_1.jpg")
+# Get the directory where the script is located
+script_dir = os.path.dirname(os.path.abspath(__file__))
+# Get file PlateRegions.npz
+img = os.path.join(script_dir, "../cropped_real_plates/Frontal/0216KZP_MLPlate0.png")
+
+plate = cv2.imread(img)
 #img = cv2.imread("../new_images/with_Protocol/Frontal/0084HNC_1.jpg")
 
 gray_plate = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)

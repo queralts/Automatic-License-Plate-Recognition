@@ -17,13 +17,15 @@ from ultralytics import YOLO
 
 # Get the directory where this script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
+# Build the full path to the model
+model_path = os.path.join(script_dir, "LP-detection.pt")
 
 #DataDir = os.path.join(script_dir, "../dataset")
-DataDir = os.path.join(script_dir, "../real_plates")
+DataDir = os.path.join(script_dir, "../../real_plates")
 Views=['Frontal','Lateral']
 
 # Load YOLO model
-model = YOLO("Detection_YOLO/LP-detection.pt")
+model = YOLO(model_path)
 # Trained on COCO DataSet
 modelclasses=np.array(list(model.names.values()))
 model.device # By default model is in GPU device: model=model.to('cpu') for execution in CPU
@@ -60,7 +62,7 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        #results[0].show
+        results[0].show()
 
         # Save cropped license plate image
         save_dir = os.path.join(script_dir, "cropped_plates", View)
