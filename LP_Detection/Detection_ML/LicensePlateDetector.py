@@ -161,13 +161,14 @@ def detection_file(image_path, crop_img, boxes, ml_format="quad"):
     detection_path = os.path.splitext(image_path)[0] + ".txt"
 
     lines = []
-    for box in boxes:
-        rect = order_box(box)  # Ensure TL, TR, BR, BL order
-        x1, y1 = rect[0]
-        x2, y2 = rect[1]
-        x3, y3 = rect[2]
-        x4, y4 = rect[3]
-        lines.append(f"{x1:.2f} {y1:.2f} {x2:.2f} {y2:.2f} {x3:.2f} {y3:.2f} {x4:.2f} {y4:.2f}") 
+    for box in boxes or []:  # handles None
+        rect = order_box(box)  # TL, TR, BR, BL
+        x1, y1 = rect[0]; x2, y2 = rect[1]; x3, y3 = rect[2]; x4, y4 = rect[3]
+        lines.append(f"{x1:.2f} {y1:.2f} {x2:.2f} {y2:.2f} {x3:.2f} {y3:.2f} {x4:.2f} {y4:.2f}")
+
+    if not lines: 
+        h, w = crop_img.shape[:2]
+        lines.append(f"0 0 {w-1} 0 {w-1} {h-1} 0 {h-1}")
 
     # Write all detections to the text file
     with open(detection_path, "w") as f:
