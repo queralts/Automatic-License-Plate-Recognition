@@ -16,7 +16,7 @@ import cv2
 from matplotlib import pyplot as plt
 import os
 
-SHOW=1
+SHOW=0
 minPlateW=100
 minPlateH=30
 
@@ -24,8 +24,13 @@ def detectPlates(image):
         imHeight, imWidth = image.shape[:2]
 
         # if the width is greater than 640 pixels, then resize the image
+        resized = image
+        scale_x = scale_y = 1.0
         if image.shape[1] > 640:
-            image = imutils.resize(image, width=640)
+            resized = imutils.resize(image, width=640)
+            H1, W1 = resized.shape[:2]
+            scale_x = imWidth / float(W1)
+            scale_y = imHeight / float(H1)
             
         # initialize the rectangular and square kernels to be applied to the image,
         # then initialize the list of license plate regions
@@ -90,6 +95,7 @@ def detectPlates(image):
                   
         # find contours in the thresholded image
         (cnts,_) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        Hr, Wr = resized.shape[:2]
 
         # loop over the contours
         for c in cnts:
@@ -102,7 +108,7 @@ def detectPlates(image):
                 print("BLOB ANALYSIS ->",x,y,w,h,aspectRatio,area)
             
             # condition of not touching the border of the image
-            NotouchBorder = x!=0 and y!=0 and x+w!=imWidth and y+h!=imHeight
+            NotouchBorder = (x != 0) and (y != 0) and (x + w != Wr) and (y + h != Hr)
 
             
                 
@@ -119,13 +125,55 @@ def detectPlates(image):
                 
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
-
+                # Rescale to coordinates of the original image
+                box[:, 0] = box[:, 0] * scale_x
+                box[:, 1] = box[:, 1] * scale_y
+                box[:, 0] = np.clip(box[:, 0], 0, imWidth - 1)
+                box[:, 1] = np.clip(box[:, 1], 0, imHeight - 1)
                 regions.append(box)
                 if (SHOW):
                     print("REGION BOX ACCEPTED->",box)
         return regions
 
+def order_box(box):
+    """
+    Order 4 points as: top-left, top-right, bottom-right, bottom-left.
+    `box` is a (4, 2) float ndarray from cv2.boxPoints (arbitrary order).
+    """
+    rect = np.zeros((4, 2), dtype="float32")
+    s = box.sum(axis=1)
+    rect[0] = box[np.argmin(s)]  # top-left has the smallest x+y
+    rect[2] = box[np.argmax(s)]  # bottom-right has the largest x+y
+    diff = np.diff(box, axis=1).ravel()
+    rect[1] = box[np.argmin(diff)]  # top-right has the smallest (x - y)
+    rect[3] = box[np.argmax(diff)]  # bottom-left has the largest (x - y)
+    return rect
 
+def detection_file(image_path, crop_img, boxes, ml_format="quad"):
+    """
+    Save a text file next to each cropped image containing the plate coordinates
+    as four (x, y) corner points: TL, TR, BR, BL.
+    
+    - image_path: path to the saved cropped image (.png)
+    - crop_img: the cropped license plate image (used for size reference)
+    - boxes: list of 4-point np.ndarray (4,2) with coordinates in crop space
+    """
+    detection_path = os.path.splitext(image_path)[0] + ".txt"
+
+    lines = []
+    for box in boxes:
+        rect = order_box(box)  # Ensure TL, TR, BR, BL order
+        x1, y1 = rect[0]
+        x2, y2 = rect[1]
+        x3, y3 = rect[2]
+        x4, y4 = rect[3]
+        lines.append(f"{x1:.2f} {y1:.2f} {x2:.2f} {y2:.2f} {x3:.2f} {y3:.2f} {x4:.2f} {y4:.2f}") 
+
+    # Write all detections to the text file
+    with open(detection_path, "w") as f:
+        f.write("\n".join(lines))
+
+    print(f"[ML] Detection file saved: {detection_path} ({len(lines)} detection(s))")
 if __name__ == "__main__":
     #image = cv2.imread("./dataset/Frontal/0216KZP.jpg")
     # Get the directory where this script is located
@@ -135,133 +183,3 @@ if __name__ == "__main__":
     image = cv2.imread(image_path)
     detectPlates(image)
     
-"""
-We want to explore the parameters of kernel size, threshold, area, aspect ratio and iterations.
-In order to do that I''ve made a small trasnformation of the code to easily acces to thiese variables and change it as we want to see how they affect.
-# --- Plate detection with tunable parameters ---
-from imutils import perspective
-import numpy as np
-import imutils
-import cv2
-from matplotlib import pyplot as plt
-
-def detectPlates(
-    image,
-    # Preprocess / resize
-    resize_max_width=640,
-    # Kernels
-    rect_kernel_size=(15, 5), 
-    square_kernel_size=(3, 3),  
-    # Morphology iteration counts
-    blackhat_iters=3,
-    close_iters=2,
-    open_iters=4,
-    dilate_iters=2,
-    # Gradient smoothing
-    grad_blur_ksize=7,         
-    # Threshold (relative to max response)
-    thresh_factor=0.40,         # raise -> fewer candidates; lower -> more noise
-    # Geometric filters
-    min_area=3400, max_area=8000,
-    min_w=100,  max_w=250,
-    min_h=30,   max_h=60,
-    min_ar=2.5, max_ar=7.0,     
-    show=True
-):
-    # Resize (keeping aspect ratio) to stabilize scales
-    if image.shape[1] > resize_max_width:
-        image = imutils.resize(image, width=resize_max_width)
-
-    imH, imW = image.shape[:2]
-
-    # Structuring elements
-    rectKernel   = cv2.getStructuringElement(cv2.MORPH_RECT, rect_kernel_size)
-    squareKernel = cv2.getStructuringElement(cv2.MORPH_RECT, square_kernel_size)
-
-    # Grayscale + blackhat to highlight dark strokes on bright plate
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    blackhat = cv2.morphologyEx(gray, cv2.MORPH_BLACKHAT, squareKernel, iterations=blackhat_iters)
-    if show:
-        plt.figure(); plt.imshow(blackhat, cmap='gray'); plt.title("Blackhat")
-
-    # Horizontal gradient (characters produce vertical transitions)
-    gradX = cv2.Sobel(blackhat, ddepth=cv2.CV_32F, dx=1, dy=0, ksize=-1)
-    gradX = np.absolute(gradX)
-    gmin, gmax = np.min(gradX), np.max(gradX)
-    if gmax > gmin:
-        gradX = (255 * ((gradX - gmin) / (gmax - gmin))).astype("uint8")
-    else:
-        gradX = np.zeros_like(gradX, dtype="uint8")
-
-    if show:
-        plt.figure(); plt.imshow(gradX, cmap='gray'); plt.title("Grad X (norm)")
-
-    # Smooth and close to connect strokes into bars
-    gradX = cv2.GaussianBlur(gradX, (grad_blur_ksize, grad_blur_ksize), 0)
-    gradX = cv2.morphologyEx(gradX, cv2.MORPH_CLOSE, rectKernel, iterations=close_iters)
-    if show:
-        plt.figure(); plt.imshow(gradX, cmap='gray'); plt.title("Blurred + Close")
-
-    # Relative threshold
-    T = thresh_factor * np.max(gradX) if np.max(gradX) > 0 else 0
-    ThrGradX = cv2.threshold(gradX, T, 255, cv2.THRESH_BINARY)[1]
-    if show:
-        plt.figure(); plt.imshow(ThrGradX, cmap='gray'); plt.title(f"Threshold @ {thresh_factor:.2f} * max")
-
-    # Open to remove specks, then dilate to grow bars into plate-like blobs
-    thresh = cv2.morphologyEx(ThrGradX, cv2.MORPH_OPEN, squareKernel, iterations=open_iters)
-    thresh = cv2.dilate(thresh, rectKernel, iterations=dilate_iters)
-    if show:
-        plt.figure(); plt.imshow(thresh, cmap='gray'); plt.title("Candidates (open + dilate)")
-
-    # Find external contours
-    cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)[0]
-
-    regions = []
-    for c in cnts:
-        x, y, w, h = cv2.boundingRect(c)
-        area = cv2.contourArea(c)
-        ar = w / float(h) if h > 0 else 0
-
-        # Avoid touching borders (often partial/false)
-        no_touch_border = (x > 0) and (y > 0) and (x + w < imW) and (y + h < imH)
-
-        # Geometry gates
-        keep_area  = (min_area <= area <= max_area)
-        keep_w     = (min_w <= w <= max_w)
-        keep_h     = (min_h <= h <= max_h)
-        keep_ar    = (min_ar <= ar <= max_ar)
-
-        if all((no_touch_border, keep_area, keep_w, keep_h, keep_ar)):
-            rect = cv2.minAreaRect(c)
-            box  = cv2.boxPoints(rect)
-            regions.append(box)
-
-            if show:
-                print(f"ACCEPTED: x={x} y={y} w={w} h={h} ar={ar:.2f} area={area:.0f}")
-
-    if show:
-        plt.show()
-
-    return regions
-
-if __name__ == "__main__":
-    img = cv2.imread("./dataset/Frontal/0216KZP.jpg")
-    boxes = detectPlates(
-        img,
-        # Try nudging these while inspecting results:
-        rect_kernel_size=(17, 5),
-        square_kernel_size=(3, 3),
-        blackhat_iters=3,
-        close_iters=2,
-        open_iters=4,
-        dilate_iters=2,
-        thresh_factor=0.38,       # lower if plates are faint; raise if many false blobs
-        min_area=3000, max_area=12000,
-        min_w=90,  max_w=280,
-        min_h=28,  max_h=80,
-        min_ar=2.2, max_ar=7.5,
-        show=True
-    )
-    # boxes contains the quadrilaterals of candidate plate regions
-"""
