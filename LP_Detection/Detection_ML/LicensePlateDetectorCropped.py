@@ -2,6 +2,17 @@
 import os
 import cv2
 import numpy as np
+"""
+If the file shows many zeros in the coordinates, it means that the function
+detectPlatesCropped() did not find any valid plate contour inside the cropped image.
+When this happens, the variable quad_or_none is None, so the code falls back to the
+full image rectangle: [[0,0], [W-1,0], [W-1,H-1], [0,H-1]].
+This usually occurs because the detection filters (aspect ratio, area ratio, etc.)
+were designed for full vehicle images, not for already cropped plates.
+Therefore, in tightly cropped YOLO outputs, the algorithm often rejects the plate
+region as too large and returns None, resulting in coordinates that describe the
+whole crop instead of an inner plate area.
+"""
 
 def order_box(box):
     """Return points ordered as TL, TR, BR, BL (float32, shape (4,2))."""
