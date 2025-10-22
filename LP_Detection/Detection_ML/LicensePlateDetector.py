@@ -111,7 +111,6 @@ def detectPlates(image):
             NotouchBorder = (x != 0) and (y != 0) and (x + w != Wr) and (y + h != Hr)
 
             
-                
             # dimension conditions of a license plate
             keepArea = area > 3400 and area < 8000
             keepWidth = w > minPlateW and w <= 250
@@ -135,46 +134,6 @@ def detectPlates(image):
                     print("REGION BOX ACCEPTED->",box)
         return regions
 
-def order_box(box):
-    """
-    Order 4 points as: top-left, top-right, bottom-right, bottom-left.
-    `box` is a (4, 2) float ndarray from cv2.boxPoints (arbitrary order).
-    """
-    rect = np.zeros((4, 2), dtype="float32")
-    s = box.sum(axis=1)
-    rect[0] = box[np.argmin(s)]  # top-left has the smallest x+y
-    rect[2] = box[np.argmax(s)]  # bottom-right has the largest x+y
-    diff = np.diff(box, axis=1).ravel()
-    rect[1] = box[np.argmin(diff)]  # top-right has the smallest (x - y)
-    rect[3] = box[np.argmax(diff)]  # bottom-left has the largest (x - y)
-    return rect
-
-def detection_file(image_path, crop_img, boxes, ml_format="quad"):
-    """
-    Save a text file next to each cropped image containing the plate coordinates
-    as four (x, y) corner points: TL, TR, BR, BL.
-    
-    - image_path: path to the saved cropped image (.png)
-    - crop_img: the cropped license plate image (used for size reference)
-    - boxes: list of 4-point np.ndarray (4,2) with coordinates in crop space
-    """
-    detection_path = os.path.splitext(image_path)[0] + ".txt"
-
-    lines = []
-    for box in boxes or []:  # handles None
-        rect = order_box(box)  # TL, TR, BR, BL
-        x1, y1 = rect[0]; x2, y2 = rect[1]; x3, y3 = rect[2]; x4, y4 = rect[3]
-        lines.append(f"{x1:.2f} {y1:.2f} {x2:.2f} {y2:.2f} {x3:.2f} {y3:.2f} {x4:.2f} {y4:.2f}")
-
-    if not lines: 
-        h, w = crop_img.shape[:2]
-        lines.append(f"0 0 {w-1} 0 {w-1} {h-1} 0 {h-1}")
-
-    # Write all detections to the text file
-    with open(detection_path, "w") as f:
-        f.write("\n".join(lines))
-
-    print(f"[ML] Detection file saved: {detection_path} ({len(lines)} detection(s))")
 if __name__ == "__main__":
     #image = cv2.imread("./dataset/Frontal/0216KZP.jpg")
     # Get the directory where this script is located

@@ -95,10 +95,6 @@ for View in Views:
             cv2.imwrite(out_path, crop)
             print(f"Saved: {out_path}")
 
-            # Now with the saved cropped plate we'll get its coordinates
-            boxes_ml = detectPlates(crop)                 # list of 4-point boxes (in crop coords)
-            detection_file(out_path, crop, boxes_ml)   
-
 
 ####  EXPLORE OBJECT DISTRIBUTION FOR EACH VIEW USING HISTOGRAMS AND BOXPLOTS
 
