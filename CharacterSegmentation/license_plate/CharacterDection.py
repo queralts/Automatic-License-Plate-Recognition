@@ -209,17 +209,46 @@ if __name__ == "__main__":
     regionsIm_lateral = data_lateral['regionsIm']
     imageIDs_lateral = data_lateral['imID']
 
-    # Apply pipeline on all lateral cropped images 
+    # Apply pipeline on all frontal cropped images 
     for img, reg in zip(imageIDs_frontal, regionsImCropped_frontal):
         image_path = os.path.join(script_dir, "../../cropped_real_plates/Frontal", img+"_MLPlate0.png")
         image = cv2.imread(image_path)
 
         # Use character detection pipeline on that image
-        plate, thresh, _ = detectCharacterCandidates(image, reg, SHOW=0)
+        plate, thresh, CharCandidates = detectCharacterCandidates(image, reg, SHOW=0)
+
+        # Find contours of detected character regions
+        contours, _ = cv2.findContours(CharCandidates.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+        # Store cropped characters
+        save_dir = os.path.join(script_dir, "../cropped_characters")
+        os.makedirs(save_dir, exist_ok=True)
+
+        base_name = img  
+
+        for i, c in enumerate(sorted(contours, key=lambda c: cv2.boundingRect(c)[0])):  # sort left to right
+            x, y, w, h = cv2.boundingRect(c)
+            
+            # Filter out very small or very large boxes
+            if w < 5 or h < 10:
+                continue
+
+            # Crop from the original plate image
+            char_crop = plate[y:y+h, x:x+w]
+
+            if char_crop.size == 0:
+                continue
+
+            out_name = f"{base_name}_Char{i+1}.png"
+            out_path = os.path.join(save_dir, out_name)
+            cv2.imwrite(out_path, char_crop)
+            print(f"Saved character: {out_path}")
 
         # Preprocess plate to improve detectors performance
         # Remove comment to see the effect of preprocessing:
         #thresh = preprocess_plate(thresh, close_size=(1,5), open_size=(2,2))
+
+        # ------------------- TRY LOG BLOB DETECTORS -------------------
 
         # Detect blobs with LoG, we won't use list of candidates
         blobs = detect_blobs_log(thresh, max_sigma=10, num_sigma=10, threshold=0.1, borders=True)
@@ -235,45 +264,38 @@ if __name__ == "__main__":
         # Postprocess LoG candidates (initial cleaning)
         mask, bboxes = postprocess_log_candidates(log_response)
 
-        # Save cropped license plate characters
-        save_dir = os.path.join(script_dir, "../cropped_characters")
-        os.makedirs(save_dir, exist_ok=True)
+        # ------------------- VISUALIZE DIFFERENT APPROACHES RESULTS -------------------
 
-        base_name = img  
-
-        for i, (x, y, w, h) in enumerate(bboxes):
-            # Crop the character from the plate image
-            char_crop = plate[y:y+h, x:x+w]
-
-            # Skip invalid crops
-            if char_crop.size == 0:
-                continue
-
-            # Build filename: originalImageName_YOLOPlate_Char#.png
-            out_name = f"{base_name}_YOLOPlate_Char{i+1}.png"
-            out_path = os.path.join(save_dir, out_name)
-
-            # Save as PNG
-            cv2.imwrite(out_path, char_crop)
-            print(f"Saved character: {out_path}")
-
-        fig, axs = plt.subplots(1, 5, figsize=(25, 5))  # 5 plots
+        fig, axs = plt.subplots(1, 6, figsize=(25, 5))  
 
         axs[0].imshow(cv2.cvtColor(plate, cv2.COLOR_BGR2RGB))
-        axs[0].set_title("Cropped Plate"); axs[0].axis("off")
+        axs[0].set_title("Cropped Plate", fontsize=10); axs[0].axis("off")
 
         axs[1].imshow(thresh, cmap="gray")
-        axs[1].set_title("Thresholded Plate"); axs[1].axis("off")
+        axs[1].set_title("Thresholded Plate", fontsize=10); axs[1].axis("off")
 
         axs[2].imshow(cv2.cvtColor(plate, cv2.COLOR_BGR2RGB))
-        axs[2].set_title("LoG blobs (skimage)"); axs[2].axis("off")
+        axs[2].set_title("LoG blobs (skimage)", fontsize=10); axs[2].axis("off")
         for y, x, r in blobs:
             circ = plt.Circle((x, y), r, color='red', linewidth=2, fill=False)
             axs[2].add_patch(circ)
 
         axs[3].imshow(candidates, cmap="gray")
-        axs[3].set_title("LoG candidates (scipy)"); axs[3].axis("off")
+        axs[3].set_title("LoG candidates (scipy)", fontsize=10); axs[3].axis("off")
 
         axs[4].imshow(mask, cmap="gray")
-        axs[4].set_title("Postprocessed Regions"); axs[4].axis("off")
+        axs[4].set_title("Postprocessed Regions", fontsize=10); axs[4].axis("off")
+
+        # Make a copy of the plate image to draw on
+        plate_with_boxes = plate.copy()
+
+        for c in contours:
+            x, y, w, h = cv2.boundingRect(c)
+            if w < 5 or h < 10:
+                continue
+            cv2.rectangle(plate_with_boxes, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+        axs[5].imshow(cv2.cvtColor(plate_with_boxes, cv2.COLOR_BGR2RGB))
+        axs[5].set_title("Character Bounding Boxes", fontsize=10); axs[5].axis("off")
+
         plt.show()
