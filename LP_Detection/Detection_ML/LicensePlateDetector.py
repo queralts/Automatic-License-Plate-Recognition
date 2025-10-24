@@ -16,7 +16,7 @@ import cv2
 from matplotlib import pyplot as plt
 import os
 
-SHOW=0
+SHOW=1
 minPlateW=100
 minPlateH=30
 
@@ -24,13 +24,8 @@ def detectPlates(image):
         imHeight, imWidth = image.shape[:2]
 
         # if the width is greater than 640 pixels, then resize the image
-        resized = image
-        scale_x = scale_y = 1.0
         if image.shape[1] > 640:
-            resized = imutils.resize(image, width=640)
-            H1, W1 = resized.shape[:2]
-            scale_x = imWidth / float(W1)
-            scale_y = imHeight / float(H1)
+            image = imutils.resize(image, width=640)
             
         # initialize the rectangular and square kernels to be applied to the image,
         # then initialize the list of license plate regions
@@ -95,7 +90,6 @@ def detectPlates(image):
                   
         # find contours in the thresholded image
         (cnts,_) = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        Hr, Wr = resized.shape[:2]
 
         # loop over the contours
         for c in cnts:
@@ -108,9 +102,10 @@ def detectPlates(image):
                 print("BLOB ANALYSIS ->",x,y,w,h,aspectRatio,area)
             
             # condition of not touching the border of the image
-            NotouchBorder = (x != 0) and (y != 0) and (x + w != Wr) and (y + h != Hr)
+            NotouchBorder = x!=0 and y!=0 and x+w!=imWidth and y+h!=imHeight
 
             
+                
             # dimension conditions of a license plate
             keepArea = area > 3400 and area < 8000
             keepWidth = w > minPlateW and w <= 250
@@ -124,22 +119,18 @@ def detectPlates(image):
                 
                 rect = cv2.minAreaRect(c)
                 box = cv2.boxPoints(rect)
-                # Rescale to coordinates of the original image
-                box[:, 0] = box[:, 0] * scale_x
-                box[:, 1] = box[:, 1] * scale_y
-                box[:, 0] = np.clip(box[:, 0], 0, imWidth - 1)
-                box[:, 1] = np.clip(box[:, 1], 0, imHeight - 1)
+
                 regions.append(box)
                 if (SHOW):
                     print("REGION BOX ACCEPTED->",box)
         return regions
+
 
 if __name__ == "__main__":
     #image = cv2.imread("./dataset/Frontal/0216KZP.jpg")
     # Get the directory where this script is located
     script_dir = os.path.dirname(os.path.abspath(__file__))
 
-    image_path = os.path.join(script_dir, "../../new_images/with_Protocol/Frontal/0084HNC_2.jpg")
+    image_path = os.path.join(script_dir, "../../datasets/new_images/with_Protocol/Frontal/frontal14.jpg")
     image = cv2.imread(image_path)
     detectPlates(image)
-    
