@@ -13,6 +13,9 @@ import numpy as np
 import pandas
 import os
 from matplotlib import pyplot as plt
+import glob
+import pandas as pd
+import seaborn as sns
 
 # Classifiers
 # include different classifiers
@@ -21,7 +24,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-
+from sklearn.metrics import classification_report, recall_score
+from sklearn.metrics import confusion_matrix
 
 
 # OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
@@ -34,7 +38,7 @@ from hog import FeatureHOG
 # DB Main Folder
 script_dir = os.path.dirname(os.path.abspath(__file__))
 
-DataDir = os.path.join(script_dir, "../datasets/example_fonts")
+DataDir = os.path.join(script_dir, "../example_fonts")
 ResultsDir = os.path.join(script_dir, "Results")
 
 # Load Font DataSets
@@ -242,10 +246,96 @@ def quick_param_sweep_digits():
 
 quick_param_sweep_digits()
 
+## ------------------- CLASSIFIERS ------------------- 
+ 
+### DATA PREPARATION
 
-## LBP Images for Digits
+X_digits = np.stack(digitsFeat['HOG'])
+y_digits = digitsLabels
+
+X_alpha = np.stack(alphabetFeat['HOG'])
+y_alpha = alphabetLabels
+
+# Split train/test
+X_train_digits, X_test_digits, y_train_digits, y_test_digits = train_test_split(
+    X_digits, y_digits, test_size=0.2, stratify=y_digits, random_state=42
+)
+
+X_train_alpha, X_test_alpha, y_train_alpha, y_test_alpha = train_test_split(
+    X_alpha, y_alpha, test_size=0.2, stratify=y_alpha, random_state=42
+)
+
+### MODEL TRAINING AND EVALUATION
+
+# Function to train a classifier and return it
+def train_clf(clf_type, X_train, y_train):
+    if clf_type == 'SVM':
+        clf = LinearSVC(dual="auto", max_iter=10000, random_state=42)
+    elif clf_type == 'KNN':
+        clf = KNeighborsClassifier(n_neighbors=10, weights='distance', algorithm='auto')
+    elif clf_type == 'MLP':
+        clf = MLPClassifier(hidden_layer_sizes=(100,100,), max_iter=500, random_state=42)
+    else:
+        raise ValueError(f"Unknown classifier type: {clf_type}")
+    clf.fit(X_train, y_train)
+    return clf
+
+# Function to evaluate a classifier using recall per class 
+def evaluate_clf(y_test, y_pred, clf_name, save_dir):
+
+    report = classification_report(y_test, y_pred, output_dict=True)
+    recall_per_class = {
+        label: metrics["recall"]
+        for label, metrics in report.items()
+        if label not in ("accuracy", "macro avg", "weighted avg")
+    }
+
+    # Print recall per class
+    print(f"\n{clf_name} recall per class:\n")
+    for cls, val in recall_per_class.items():
+        print(f"Class {cls}: {val:.3f}")
 
 
-# HOG Images for Digits
+    # Convert to DataFrame for Seaborn
+    df = pd.DataFrame({
+        "Class": list(recall_per_class.keys()),
+        "Recall": list(recall_per_class.values())
+    })
+
+    # Plot with Seaborn
+    plt.figure(figsize=(12, 6))
+    sns.set_theme(style="whitegrid")
+    ax = sns.barplot(x="Class", y="Recall", data=df, palette='viridis', hue="Class", legend=False)
+
+    ax.set_ylim(0, 1)
+    ax.set_title(f"{clf_name} - Recall per Class", fontsize=14)
+    ax.set_xlabel("Class", fontsize=12)
+    ax.set_ylabel("Recall", fontsize=12)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    if save_dir:
+        save_path = os.path.join(save_dir, f"{clf_name}_recall_per_class.png")
+        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        print(f"Plot saved to: {save_path}")
+        plt.close()
+    else:
+        plt.show()
 
 
+### DIRECTORY TO STORE RESULTS
+save_dir = os.path.join(script_dir, "Results")
+
+# ------------------- DIGIT CLASSIFIERS -------------------
+
+# Train and evaluate SVM for digits
+SVM_digits_clf = train_clf('SVM', X_train_digits, y_train_digits)
+y_pred_digits = SVM_digits_clf.predict(X_test_digits)
+evaluate_clf(y_test_digits, y_pred_digits, "SVM_Digits", save_dir)
+
+# ------------------- LETTER/ALPHABET CLASSIFIERS -------------------
+
+# Train and evaluate SVM for letters
+SVM_alpha_clf = train_clf('SVM', X_train_alpha, y_train_alpha)
+y_pred_alpha = SVM_alpha_clf.predict(X_test_alpha)
+evaluate_clf(y_test_alpha, y_pred_alpha, "SVM_Alphabet", save_dir)

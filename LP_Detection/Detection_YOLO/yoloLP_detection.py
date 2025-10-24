@@ -63,7 +63,7 @@ for View in Views:
         yoloConf[View].append(conf)
 
         # Visualize detection with bounding boxes
-        results[0].show()
+        #results[0].show()
 
         # Save cropped license plate image
         save_dir = os.path.join(script_dir, "cropped_plates", View)
