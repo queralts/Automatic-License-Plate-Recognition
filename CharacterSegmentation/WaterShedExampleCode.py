@@ -19,13 +19,23 @@ import os
 # Get the directory where the script is located
 script_dir = os.path.dirname(os.path.abspath(__file__))
 # Get file PlateRegions.npz
-img = os.path.join(script_dir, "../cropped_real_plates/Frontal/0216KZP_MLPlate0.png")
+img = os.path.join(script_dir, "../datasets/cropped_real_plates/Frontal/9247CZG_MLPlate0.png")
+#img = os.path.join(script_dir, "../datasets/cropped_real_plates/Lateral/2335KGY_MLPlate0.png")
 
 plate = cv2.imread(img)
-#img = cv2.imread("../new_images/with_Protocol/Frontal/0084HNC_1.jpg")
-
 gray_plate = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)
-img = gray_plate  
+
+# --- PREPROCESSING: Black-hat--
+h, w = gray_plate.shape
+kx = max(9, (w // 18) | 1)   # odd width, horizontally biased
+ky = max(3, (h // 40) | 1)   # odd height, thin vertically
+kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kx, ky))
+
+blackhat = cv2.morphologyEx(gray_plate, cv2.MORPH_BLACKHAT, kernel)
+enhanced = cv2.normalize(gray_plate + 1.2 * blackhat, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
+
+img = enhanced  # use this for all following steps
+#cv2.imshow("Preprocess - Black-hat enhanced", img); cv2.waitKey(0)
 
 # Supongamos que 'img' es la imagen original en gris
 # 1. Umbral binario
@@ -74,3 +84,25 @@ cv2.waitKey(0)
 #used to see each image and manually move to the next step
 cv2.destroyAllWindows()
 
+# --- POST PROCESSING: BINARY MASK--
+
+#Highlight characters (mask from black-hat)
+H, W = blackhat.shape
+margin_L, margin_R = int(0.06*W), int(0.02*W)         
+roi = blackhat[2:H-2, margin_L:W-margin_R]
+
+# Characters are bright in black-hat -> Otsu 
+_, roi_bin = cv2.threshold(cv2.GaussianBlur(roi, (3,3), 0), 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+k = np.ones((3,3), np.uint8)
+roi_bin = cv2.morphologyEx(roi_bin, cv2.MORPH_CLOSE, k, iterations=2)
+
+
+mask_chars = np.zeros_like(blackhat)
+mask_chars[2:H-2, margin_L:W-margin_R] = roi_bin
+
+overlay = cv2.cvtColor(gray_plate, cv2.COLOR_GRAY2BGR)
+overlay[mask_chars == 255] = (0,255,0)
+cv2.imshow("Characters - Binary Mask", mask_chars)
+cv2.imshow("Characters - Mask Overlay", overlay)
+cv2.waitKey(0)
