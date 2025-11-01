@@ -93,6 +93,14 @@ for View in Views:
 
             # Save cropped plate
             cv2.imwrite(out_path, crop)
+            regions = detectPlates(crop)  # list of (4,2) quads in crop coords
+            if len(regions) > 0:
+                quad = np.asarray(regions[0], dtype=np.float32)
+            else:
+                h, w = crop.shape[:2]
+                quad = np.array([[0, 0], [w-1, 0], [w-1, h-1], [0, h-1]], dtype=np.float32)
+
+            detection_file(out_path, crop, [quad], ml_format="quad")
             print(f"Saved: {out_path}")
 
 
