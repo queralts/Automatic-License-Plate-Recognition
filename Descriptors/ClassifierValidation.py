@@ -71,6 +71,7 @@ def recognize_license_plates(cropped_dir):
                     pred = SVM_digits_clf.predict(features)[0]
                 else:
                     pred = SVM_alpha_clf.predict(features)[0]
+                    pred = pred.upper()
                 recognized.append(pred)
             except Exception as e:
                 print(f"Error processing {img_path}: {e}")
