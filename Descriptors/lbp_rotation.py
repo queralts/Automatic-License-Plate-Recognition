@@ -26,10 +26,7 @@ def to_uint8(img):
 def chi2_distance(a, b, eps=1e-9): #to see similarity
     return 0.5 * np.sum((a - b) ** 2 / (a + b + eps))
 
-"""
-Now we'll do the exercise 4 c), we need to plot it in 2D.
-
-"""
+# We need to plot it in 2D.
 def pca_2d(X):
     X = np.asarray(X, dtype=np.float64)
     Xc = X - X.mean(axis=0, keepdims=True)
@@ -91,7 +88,8 @@ if __name__ == "__main__":
         H9_def.append(lbp_default.extract_image_features(to_uint8(im)))
         H9_uni.append(lbp_uniform.extract_image_features(to_uint8(im)))
     """
-    # Exercise 4 b)
+    # CHI DISTANCE
+    
     # Print comparisons (χ² = difference score; 0 = identical)
     print("\n[Non-invariant] method=default")
     print("6: ",

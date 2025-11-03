@@ -36,8 +36,6 @@ def norm_plate_angle(rect):
         angle += 180.0
     return float(angle)
 
-# Debora's code, i'm just trying things
-
 def detectPlates(image_bgr):
     """
     Detect license-plate-like regions and return a list of tuples:
@@ -45,7 +43,6 @@ def detectPlates(image_bgr):
     - box_points: 4x2 float array with the rotated rectangle corners
     - angle_deg: normalized angle in degrees ([-90, +90])
     """
-    # Optional resize for stability/speed
     if image_bgr.shape[1] > 640:
         image_bgr = imutils.resize(image_bgr, width=640)
 

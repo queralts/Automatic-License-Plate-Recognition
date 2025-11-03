@@ -30,8 +30,6 @@ from sklearn.metrics import precision_recall_fscore_support,precision_score, rec
 
 from scipy.stats import ttest_ind
 
-# OWN FUNCTIONS (MODIFY ACORDING TO YOUR LOCAL PATH)
-
 
 #### STEP0. EXP-SET UP
 
@@ -357,7 +355,7 @@ for pair, pval in pairs.items():
     else:
         print(f"  {pair} are NOT significantly different (p={pval:.4e})")
 
-
+# We also computed ANOVA that basically searches for similarities/differences between all the classifiers, not just a pair.
 #F_stat, p_ANOVA = f_oneway(aucSVC, aucKNN, aucMLP)
 #print("\nANOVA TEST (AUC across classifiers):")
 #print(f"F-statistic = {F_stat:.4f}, p-value = {p_ANOVA:.4e}")
